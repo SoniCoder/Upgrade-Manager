@@ -11,18 +11,42 @@ from subprocess import Popen
 from config import *
 
 def connect():
-    dbpath = globals()['PROPS']['TargetServer'] + ":" + globals()['PROPS']['Port'] + "/" + globals()['PROPS']['SID']
-    try:
-        con = cx_Oracle.connect(globals()['PROPS']['Username'], globals()['PROPS']['Password'], dbpath)
-        print("Connection Successful")
-        return (True, None)
-    except Exception as e:
-        print("Connection Failed", e)
-        return (False, e)
+    dbpath = globals()['PROPS']['TargetServer'] + ":" + globals()['PROPS']['Port'] + "/" + globals()['PROPS']['Service']
+    for username, password in globals()['SCHEMA_CREDS_KEYS']:
+        print("Attempting Connection with Username %s and Password %s"%(username, password))
+        try:
+            con = cx_Oracle.connect(globals()['PROPS'][username], globals()['PROPS'][password], dbpath)
+            print("Connection Successful")
+            con.close()
+        except Exception as e:
+            print("Connection Failed", e)
+            return (False, e, "Connection Attempt Failed! Username:%s Password:%s"%(globals()['PROPS'][username], globals()['PROPS'][password]))
+    return (True, None, None)
 
 def execute():
     p = Popen("sample.bat", cwd=os.getcwd())
     stdout, stderr = p.communicate()
+
+def init():
+    globals()['SCHEMA_CREDS_KEYS'] = [('System_Username', 'System_Password'), ('WebWORKS_Username', 'WebWORKS_Password'), ('ABPP_Username', 'ABPP_Password'), ('Monitor_Username', 'Monitor_Password'), ('JDA_SYSTEM_Username', 'JDA_SYSTEM_Password'), ('SCPO_Username', 'SCPO_Password')]
+
+
+def queryComponents():
+    dbpath = globals()['PROPS']['TargetServer'] + ":" + globals()['PROPS']['Port'] + "/" + globals()['PROPS']['Service']
+    con = cx_Oracle.connect(globals()['PROPS']['WebWORKS_Username'], globals()['PROPS']['WebWORKS_Password'], dbpath)
+    cur = con.cursor()
+    cur.execute('select DISTINCT(SCHEMA_NAME) from csm_application')
+    globals()['COMPONENTS'] = []
+    for result in cur:
+        globals()['COMPONENTS'].append(result[0])
+    cur.close()
+    cur = con.cursor()
+    cur.execute("select VALUE from csm_schema_log where name='DATABASE_VERSION'")
+    result = cur.fetchone()
+    globals()['COMPVER'] = result[0]
+    cur.close()
+    con.close()   
+
 
 def readProperties():
     separator = ":"
@@ -42,11 +66,39 @@ def readProperties():
 
     globals()['PROPS'] = props
     
+class VersionCheckerWindow(QMainWindow):
+    def __init__(self):     
+        super(VersionCheckerWindow, self).__init__()
+        self.setGeometry(50, 50, 400, 40*len(globals()['COMPONENTS']) + 80)
+        self.setWindowTitle("Application Components Version List")
+        self.setWindowIcon(QIcon('icon.png'))
+        self.design()
+        self.show()
+
+    def design(self):
+        vtable = QTableWidget(self)
+        tableWidth = 400
+        vtable.resize(tableWidth, 40*len(globals()['COMPONENTS']))
+        vtable.setRowCount(len(globals()['COMPONENTS']))
+        vtable.setColumnCount(2)
+        vtable.setColumnWidth(0, tableWidth/2 - 10)
+        vtable.setColumnWidth(1, tableWidth/2 - 10)
+        vtable.setHorizontalHeaderLabels("Component;Version;".split(";"))
+
+        curRow = 0
+        for i in globals()['COMPONENTS']:
+            vtable.setItem(curRow,0, QTableWidgetItem(i))
+            vtable.setItem(curRow,1, QTableWidgetItem(globals()['COMPVER']))
+            curRow += 1
+
+        btn = QPushButton("Proceed", self)
+        btn.move(20,self.height() - 60)
 
 class Window(QMainWindow):
     def __init__(self):     
         super(Window, self).__init__()
-        self.setGeometry(50, 50, 400, 400)
+        init()
+        self.setGeometry(50, 50, 400, 320)
         self.setWindowTitle("Upgrade Manager")
         self.setWindowIcon(QIcon('icon.png'))
         self.design()
@@ -98,25 +150,25 @@ class Window(QMainWindow):
         self.service.setFixedWidth(200)
         self.service.setEnabled(False)
 
-        usernamelbl = QLabel("Username",self)
-        usernamelbl.move(20, 200)
+        # usernamelbl = QLabel("Username",self)
+        # usernamelbl.move(20, 200)
 
-        self.username = QLineEdit(self)
-        self.username.move(150, 200)
-        self.username.setFixedWidth(200)
-        self.username.setEnabled(False)
+        # self.username = QLineEdit(self)
+        # self.username.move(150, 200)
+        # self.username.setFixedWidth(200)
+        # self.username.setEnabled(False)
 
-        passwordlbl = QLabel("Password",self)
-        passwordlbl.move(20, 240)
+        # passwordlbl = QLabel("Password",self)
+        # passwordlbl.move(20, 240)
 
-        self.password = QLineEdit(self)
-        self.password.move(150, 240)
-        self.password.setFixedWidth(200)
-        self.password.setEnabled(False)
+        # self.password = QLineEdit(self)
+        # self.password.move(150, 240)
+        # self.password.setFixedWidth(200)
+        # self.password.setEnabled(False)
 
         conbtn = QPushButton("Connect", self)
         conbtn.clicked.connect(self.connect)
-        conbtn.move(20,320)
+        conbtn.move(20,240)
 
     def connect(self):
         status = connect()
@@ -126,12 +178,18 @@ class Window(QMainWindow):
         if status[0]:
             msg.setIcon(QMessageBox.Information)
             msg.setText("Connection Successful")
+            msg.buttonClicked.connect(self.con_success)
         else:
             msg.setIcon(QMessageBox.Warning)
             msg.setText("Connection Failed")
             msg.setInformativeText(str(status[1]))
-        
+            msg.setDetailedText(status[2])
         msg.exec_()
+
+    def con_success(self):
+        queryComponents()
+        globals()['VSCHKINST'] = VersionCheckerWindow()
+        self.hide()
 
     def execute(self):
         execute()
@@ -145,5 +203,5 @@ class Window(QMainWindow):
         self.port.setText(globals()['PROPS']['Port'])
         self.sid.setText(globals()['PROPS']['SID'])
         self.service.setText(globals()['PROPS']['Service'])
-        self.username.setText(globals()['PROPS']['Username'])
-        self.password.setText(globals()['PROPS']['Password'])
+        # self.username.setText(globals()['PROPS']['Username'])
+        # self.password.setText(globals()['PROPS']['Password'])
