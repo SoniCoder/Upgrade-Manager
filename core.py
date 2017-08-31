@@ -35,23 +35,27 @@ def queryComponents():
     dbpath = globals()['PROPS']['TargetServer'] + ":" + globals()['PROPS']['Port'] + "/" + globals()['PROPS']['Service']
     con = cx_Oracle.connect(globals()['PROPS']['WebWORKS_Username'], globals()['PROPS']['WebWORKS_Password'], dbpath)
     cur = con.cursor()
+    print("Querying Schema Names")
     cur.execute('select DISTINCT(SCHEMA_NAME) from csm_application')
     globals()['COMPONENTS'] = []
     for result in cur:
         globals()['COMPONENTS'].append(result[0])
     cur.close()
     cur = con.cursor()
+    print("Querying Current Version")
     cur.execute("select VALUE from csm_schema_log where name='DATABASE_VERSION'")
     result = cur.fetchone()
     globals()['COMPVER'] = result[0]
     cur.close()
     con.close()   
 
+    print("Performing Target Version Check")
     targetv_path = globals()['PROPS']['JDA_HOME'] + '\\' + 'install\\platform.version'
     f = open(targetv_path)
     line = f.readline()
     line = f.readline()
     targetVersion = line.split(':')[1].strip()
+    print("Found Target Version:", targetVersion)
     globals()['TARGET_VERSION'] = targetVersion
     f.close()
 
