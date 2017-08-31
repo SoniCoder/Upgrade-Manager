@@ -13,14 +13,14 @@ from config import *
 def connect():
     dbpath = globals()['PROPS']['TargetServer'] + ":" + globals()['PROPS']['Port'] + "/" + globals()['PROPS']['Service']
     for username, password in globals()['SCHEMA_CREDS_KEYS']:
-        print("Attempting Connection with Username %s and Password %s"%(username, password))
+        print("Attempting Connection with Username %s and Password %s"%(globals()['PROPS'][username], globals()['PROPS'][password]))
         try:
             con = cx_Oracle.connect(globals()['PROPS'][username], globals()['PROPS'][password], dbpath)
             print("Connection Successful")
             con.close()
         except Exception as e:
             print("Connection Failed", e)
-            return (False, e, "Connection Attempt Failed! Username:%s Password:%s"%(globals()['PROPS'][username], globals()['PROPS'][password]))
+            return (False, e, "Connection Attempt Failed! Username:%s"%(globals()['PROPS'][username]))
     return (True, None, None)
 
 def execute():
@@ -47,6 +47,13 @@ def queryComponents():
     cur.close()
     con.close()   
 
+    targetv_path = globals()['PROPS']['JDA_HOME'] + '\\' + 'install\\platform.version'
+    f = open(targetv_path)
+    line = f.readline()
+    line = f.readline()
+    targetVersion = line.split(':')[1].strip()
+    globals()['TARGET_VERSION'] = targetVersion
+    f.close()
 
 def readProperties():
     separator = ":"
@@ -64,6 +71,7 @@ def readProperties():
                 # strip() removes white space from the ends of strings
                 props[name.strip()] = value.strip()
 
+    props['JDA_HOME'] = props['JDA_HOME'].replace('-', ':')
     globals()['PROPS'] = props
     
 class VersionCheckerWindow(QMainWindow):
@@ -80,18 +88,20 @@ class VersionCheckerWindow(QMainWindow):
         tableWidth = 400
         vtable.resize(tableWidth, 40*len(globals()['COMPONENTS']))
         vtable.setRowCount(len(globals()['COMPONENTS']))
-        vtable.setColumnCount(2)
-        vtable.setColumnWidth(0, tableWidth/2 - 10)
-        vtable.setColumnWidth(1, tableWidth/2 - 10)
-        vtable.setHorizontalHeaderLabels("Component;Version;".split(";"))
+        vtable.setColumnCount(3)
+        vtable.setColumnWidth(0, tableWidth/3 - 6)
+        vtable.setColumnWidth(1, tableWidth/3 - 6)
+        vtable.setColumnWidth(2, tableWidth/3 - 6)
+        vtable.setHorizontalHeaderLabels("Component;Current Version;Target Version;".split(";"))
 
         curRow = 0
         for i in globals()['COMPONENTS']:
             vtable.setItem(curRow,0, QTableWidgetItem(i))
             vtable.setItem(curRow,1, QTableWidgetItem(globals()['COMPVER']))
+            vtable.setItem(curRow,2, QTableWidgetItem(globals()['TARGET_VERSION']))
             curRow += 1
 
-        btn = QPushButton("Proceed", self)
+        btn = QPushButton("Migrate", self)
         btn.move(20,self.height() - 60)
 
 class Window(QMainWindow):
