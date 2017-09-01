@@ -8,6 +8,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtChart import *
 from subprocess import Popen
 
+from GUI_Design import *
+
 from config import *
 
 def connect():
@@ -22,6 +24,13 @@ def connect():
             print("Connection Failed", e)
             return (False, e, "Connection Attempt Failed! Username:%s"%(globals()['PROPS'][username]))
     return (True, None, None)
+
+class EmittingStream(QObject):
+
+    textWritten = pyqtSignal(str)
+
+    def write(self, text):
+        self.textWritten.emit(str(text))
 
 def execute():
     p = Popen("sample.bat", cwd=os.getcwd())
@@ -78,18 +87,16 @@ def readProperties():
     props['JDA_HOME'] = props['JDA_HOME'].replace('-', ':')
     globals()['PROPS'] = props
     
-class VersionCheckerWindow(QMainWindow):
-    def __init__(self):     
-        super(VersionCheckerWindow, self).__init__()
-        self.setGeometry(50, 50, 400, 40*len(globals()['COMPONENTS']) + 80)
-        self.setWindowTitle("Application Components Version List")
-        self.setWindowIcon(QIcon('icon.png'))
+class VersionCheckerScreen(QWidget):
+    def __init__(self, parent = None):     
+        QWidget.__init__(self, parent)
+        self.setGeometry(50, 50, 400, 40*len(globals()['COMPONENTS']) + 120)
         self.design()
-        self.show()
-
+    
     def design(self):
         vtable = QTableWidget(self)
         tableWidth = 400
+        vtable.move(0, 40)
         vtable.resize(tableWidth, 40*len(globals()['COMPONENTS']))
         vtable.setRowCount(len(globals()['COMPONENTS']))
         vtable.setColumnCount(3)
@@ -107,17 +114,22 @@ class VersionCheckerWindow(QMainWindow):
 
         btn = QPushButton("Migrate", self)
         btn.move(20,self.height() - 60)
-
+        vtable.setDisabled(True)
 class Window(QMainWindow):
     def __init__(self):     
         super(Window, self).__init__()
         init()
-        self.setGeometry(50, 50, 400, 320)
+        self.setGeometry(50, 50, 1280, 720)
         self.setWindowTitle("Upgrade Manager")
         self.setWindowIcon(QIcon('icon.png'))
         self.design()
+        sys.stdout = EmittingStream(textWritten=self.normalOutputWritten)
         self.load()
         self.show()
+    
+    def __del__(self):
+        # Restore sys.stdout
+        sys.stdout = sys.__stdout__
 	
     def design(self):
         self.statusBar()
@@ -131,58 +143,28 @@ class Window(QMainWindow):
         loadPropAction.triggered.connect(self.readProperties)
         
         fileMenu.addAction(loadPropAction)
+        contentScreen = QWidget(self)
+        self.setCentralWidget(contentScreen)
+        self.layout = QVBoxLayout()
+        self.top_layout = QHBoxLayout()
+        
+        self.connectionScreen = ConnectionScreen()
 
-        dblbl = QLabel("Target Database",self)
-        dblbl.move(20, 40)
+        self.connectionScreen.conbtn.clicked.connect(self.connect)
+        
 
-        self.dbserver = QLineEdit(self)
-        self.dbserver.move(150, 40)
-        self.dbserver.setFixedWidth(200)
-        self.dbserver.setEnabled(False)
+        self.layout.addLayout(self.top_layout)
+        self.top_layout.addWidget(self.connectionScreen)
+        
+        
+        consoleOutputWidget = QWidget()
+        self.layout.addWidget(consoleOutputWidget)
 
-        portlbl = QLabel("Port",self)
-        portlbl.move(20, 80)
+        self.ConTextField = ConsoleTE(consoleOutputWidget)        
+        contentScreen.setLayout(self.layout)
 
-        self.port = QLineEdit(self)
-        self.port.move(150, 80)
-        self.port.setFixedWidth(200)
-        self.port.setEnabled(False)
-
-        sidlbl = QLabel("SID",self)
-        sidlbl.move(20, 120)
-
-        self.sid = QLineEdit(self)
-        self.sid.move(150, 120)
-        self.sid.setFixedWidth(200)
-        self.sid.setEnabled(False)
-
-        servicelbl = QLabel("Service",self)
-        servicelbl.move(20, 160)
-
-        self.service = QLineEdit(self)
-        self.service.move(150, 160)
-        self.service.setFixedWidth(200)
-        self.service.setEnabled(False)
-
-        # usernamelbl = QLabel("Username",self)
-        # usernamelbl.move(20, 200)
-
-        # self.username = QLineEdit(self)
-        # self.username.move(150, 200)
-        # self.username.setFixedWidth(200)
-        # self.username.setEnabled(False)
-
-        # passwordlbl = QLabel("Password",self)
-        # passwordlbl.move(20, 240)
-
-        # self.password = QLineEdit(self)
-        # self.password.move(150, 240)
-        # self.password.setFixedWidth(200)
-        # self.password.setEnabled(False)
-
-        conbtn = QPushButton("Connect", self)
-        conbtn.clicked.connect(self.connect)
-        conbtn.move(20,240)
+        self.layout.setSpacing(0)
+        self.layout.setContentsMargins(0,0,0,0)
 
     def connect(self):
         status = connect()
@@ -202,8 +184,12 @@ class Window(QMainWindow):
 
     def con_success(self):
         queryComponents()
-        globals()['VSCHKINST'] = VersionCheckerWindow()
-        self.hide()
+        # globals()['VSCHKINST'] = VersionCheckerWindow()
+        if('vschkscr' not in globals()):
+            globals()['vschkscr'] = VersionCheckerScreen()
+            self.top_layout.addWidget(globals()['vschkscr'])
+        # self.vschkscr.move(100, 100)
+        #self.hide()
 
     def execute(self):
         execute()
@@ -211,11 +197,24 @@ class Window(QMainWindow):
     def load(self):
         self.readProperties()
 
+    @pyqtSlot(str)
+    def normalOutputWritten(self, text):
+        """Append text to the QTextEdit."""
+        #sys.__stdout__.write(text)
+        #Maybe QTextEdit.append() works as well, but this is how I do it:
+        # cursor = self.ConTextField.textCursor()
+        # cursor.movePosition(cursor.End)
+        # cursor.insertText(text)
+        # #self.ConTextField.setTextCursor(cursor)
+        # self.ConTextField.ensureCursorVisible()
+
+        self.ConTextField.moveCursor(QTextCursor.End)
+        self.ConTextField.insertPlainText( text )
+        QApplication.processEvents()
+
     def readProperties(self):
         readProperties()
-        self.dbserver.setText(globals()['PROPS']['TargetServer'])
-        self.port.setText(globals()['PROPS']['Port'])
-        self.sid.setText(globals()['PROPS']['SID'])
-        self.service.setText(globals()['PROPS']['Service'])
-        # self.username.setText(globals()['PROPS']['Username'])
-        # self.password.setText(globals()['PROPS']['Password'])
+        self.connectionScreen.dbserver.setText(globals()['PROPS']['TargetServer'])
+        self.connectionScreen.port.setText(globals()['PROPS']['Port'])
+        self.connectionScreen.sid.setText(globals()['PROPS']['SID'])
+        self.connectionScreen.service.setText(globals()['PROPS']['Service'])

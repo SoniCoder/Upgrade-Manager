@@ -1,0 +1,7 @@
+For invalid/valid check ila gave table user_constraints whereas gaston gave user_objects
+
+Also while connecting as a certain user only that user's constraints are shown.
+
+For the count checks a whole lot of tables don't exist for the migration that Ila provide and those tables only belong to a certain user.
+
+And how many sort of migrations do I have to handle?
