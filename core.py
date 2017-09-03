@@ -46,10 +46,29 @@ def queryComponents():
     cur = con.cursor()
     print("Querying Schema Names")
     cur.execute('select DISTINCT(SCHEMA_NAME) from csm_application')
-    globals()['COMPONENTS'] = []
+    comps = []
     for result in cur:
-        globals()['COMPONENTS'].append(result[0])
+        comps.append(result[0])
     cur.close()
+
+    augComps = []
+    augComps.append(globals()['PROPS']['JDA_SYSTEM_Username'].upper())
+    augComps.append(globals()['PROPS']['WebWORKS_Username'].upper())
+    augComps.append(globals()['PROPS']['ABPP_Username'].upper())
+    augComps.append(globals()['PROPS']['Monitor_Username'].upper())
+
+    comps.remove(globals()['PROPS']['WebWORKS_Username'].upper())
+    comps.remove(globals()['PROPS']['Monitor_Username'].upper())
+    comps.remove(globals()['PROPS']['SCPO_Username'].upper())
+
+    augComps += comps
+
+    augComps.append(globals()['PROPS']['SCPO_Username'].upper())
+
+
+    globals()['COMPONENTS'] = augComps
+
+
     cur = con.cursor()
     print("Querying Current Version")
     cur.execute("select VALUE from csm_schema_log where name='DATABASE_VERSION'")
@@ -90,13 +109,13 @@ def readProperties():
 class VersionCheckerScreen(QWidget):
     def __init__(self, parent = None):     
         QWidget.__init__(self, parent)
-        self.setGeometry(50, 50, 400, 40*len(globals()['COMPONENTS']) + 120)
+        self.setGeometry(50, 50, 400, 40*len(globals()['COMPONENTS']) + 60)
         self.design()
     
     def design(self):
         vtable = QTableWidget(self)
         tableWidth = 400
-        vtable.move(0, 40)
+        vtable.move(0, 20)
         vtable.resize(tableWidth, 40*len(globals()['COMPONENTS']))
         vtable.setRowCount(len(globals()['COMPONENTS']))
         vtable.setColumnCount(3)
@@ -112,12 +131,15 @@ class VersionCheckerScreen(QWidget):
             vtable.setItem(curRow,2, QTableWidgetItem(globals()['TARGET_VERSION']))
             curRow += 1
 
-        btn = QPushButton("Migrate", self)
-        btn.move(20,self.height() - 60)
-        vtable.setDisabled(True)
+        btn = QPushButton("Pre-Migrate", self)
+        btn.move(20,self.height() - 20)
+        vtable.setEditTriggers(QAbstractItemView.NoEditTriggers)
+
+    def sizeHint(self):
+        return QSize(400,300)
 class Window(QMainWindow):
     def __init__(self):     
-        super(Window, self).__init__()
+        QMainWindow.__init__(self)
         init()
         self.setGeometry(50, 50, 1280, 720)
         self.setWindowTitle("Upgrade Manager")
@@ -133,39 +155,42 @@ class Window(QMainWindow):
 	
     def design(self):
         self.statusBar()
-
         mainMenu = self.menuBar()
         fileMenu = mainMenu.addMenu('&File')
-
         loadPropAction= QAction("&Load Property File", self)
         loadPropAction.setShortcut("Ctrl+L")
         loadPropAction.setStatusTip('Load upgrade.properties')
         loadPropAction.triggered.connect(self.readProperties)
-        
         fileMenu.addAction(loadPropAction)
+
         contentScreen = QWidget(self)
         self.setCentralWidget(contentScreen)
-        self.layout = QVBoxLayout()
-        self.top_layout = QHBoxLayout()
+
+        self.primaryLayout = QHBoxLayout(contentScreen)
+        #contentScreen.setLayout(self.primaryLayout)
+
+
+        
+        self.leftSide = QWidget()
+        self.leftLayout = QVBoxLayout(self.leftSide)
+        #self.leftSide.setLayout(self.leftLayout)
+
+        self.actionScreen = ActionScreen()
         
         self.connectionScreen = ConnectionScreen()
-
+        self.actionScreen.layout.addWidget(self.connectionScreen)
         self.connectionScreen.conbtn.clicked.connect(self.connect)
         
+        self.leftLayout.addWidget(self.actionScreen)
+        self.leftLayout.addWidget(QHLine())
+        self.ConTextField = ConsoleTE()        
+        self.leftLayout.addWidget(self.ConTextField)
 
-        self.layout.addLayout(self.top_layout)
-        self.top_layout.addWidget(self.connectionScreen)
-        
-        
-        consoleOutputWidget = QWidget()
-        self.layout.addWidget(consoleOutputWidget)
 
-        self.ConTextField = ConsoleTE(consoleOutputWidget)        
-        contentScreen.setLayout(self.layout)
-
-        self.layout.setSpacing(0)
-        self.layout.setContentsMargins(0,0,0,0)
-
+        self.rightSide = DisplayScreen()
+        self.primaryLayout.addWidget(self.leftSide)
+        self.primaryLayout.addWidget(QVLine())
+        self.primaryLayout.addWidget(self.rightSide)
     def connect(self):
         status = connect()
 
@@ -186,8 +211,10 @@ class Window(QMainWindow):
         queryComponents()
         # globals()['VSCHKINST'] = VersionCheckerWindow()
         if('vschkscr' not in globals()):
-            globals()['vschkscr'] = VersionCheckerScreen()
-            self.top_layout.addWidget(globals()['vschkscr'])
+            globals()['vschkscr'] = VersionCheckerScreen(self.actionScreen)
+            self.actionScreen.layout.addWidget(globals()['vschkscr'])
+            self.connectionScreen.hide()
+            pass
         # self.vschkscr.move(100, 100)
         #self.hide()
 

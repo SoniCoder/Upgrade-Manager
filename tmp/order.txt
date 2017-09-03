@@ -1,0 +1,17 @@
+JDA_System
+WWfmgr
+abppmgr
+emamgr
+qwmgr
+SCPOMgr
+
+
+Gather stats
+Table Count
+Valid/Invalid Objects
+
+7.4.2 before
+
+
+
+learn cursors , procedures , functions and triggers .
