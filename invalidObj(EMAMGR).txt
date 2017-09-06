@@ -1,0 +1,5 @@
+old   1: select * from user_constraints where owner='&1' and (status <> 'ENABLED' or validated='NOT VALIDATED')
+new   1: select * from user_constraints where owner='EMAMGR' and (status <> 'ENABLED' or validated='NOT VALIDATED')
+
+no rows selected
+
