@@ -88,8 +88,28 @@ class DisplayScreen(QWidget):
         self.layout.addWidget(self.statGather)
         self.statGather.hide()
 
+        self.rowCount = RowCountScreen(self)
+        self.layout.addWidget(self.rowCount)
+        self.rowCount.hide()
+        self.currentWidget = self.imgLbl
+
     def sizeHint(self):
         return QSize(640,700)
+
+class RowCountScreen(QTableWidget):
+    def __init__(self,parent=None):
+        QTableWidget.__init__(self)
+    def setData(self, lst, header):
+        self.setRowCount(len(lst))
+        self.setColumnCount(2)
+        self.setHorizontalHeaderLabels(header.split(";"))
+        self.setColumnWidth(0, self.width()/2)
+        self.setColumnWidth(1, self.width()/2)
+        curRow = 0
+        for tb, cnt in lst:
+            self.setItem(curRow,0, QTableWidgetItem(tb))
+            self.setItem(curRow,1, QTableWidgetItem(cnt))
+            curRow += 1
 
 class StatGatherScreen(QWidget):
     def __init__(self,parent=None):
@@ -105,6 +125,9 @@ class StatGatherScreen(QWidget):
         self.layout.addWidget(self.rightSide)
         self.leftList = []
         self.rightList = []
+
+
+
 
 class QVLine(QFrame):
     def __init__(self, parent=None):

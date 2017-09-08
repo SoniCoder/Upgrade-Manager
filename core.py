@@ -73,6 +73,29 @@ class LogPipe(threading.Thread):
         """
         os.close(self.fdWrite)
 
+
+def readRows():
+    globals()['RowCountDict'] = {}
+    dct = globals()['RowCountDict']
+    for comp_i in range(len(globals()['COMPONENTS'])):
+        comp = globals()['COMPONENTS'][comp_i]
+        dct[comp] = []
+        lst = dct[comp]
+        fileName = "logs/" + "count(%s)list.txt"%comp
+        print("Opening File:",fileName)
+        f = open(fileName)
+        f.readline()
+        f.readline()
+        f.readline()
+        while True:
+            line = f.readline()
+            pair = line.split()
+            if len(pair)!=2: break
+            lst.append(pair)
+        print(len(lst))
+
+
+
 def updater(task):
     if task.op == 1:
         imgLbl = globals()['DISP_SCREEN'].statGather.rightList[task.localid]
@@ -81,8 +104,16 @@ def updater(task):
         elif task.status == 2:
             pixmap = QPixmap('images/green.png')
         imgLbl.setPixmap(pixmap)
+    elif task.op == 100:
+        if task.status == 2:
+            globals()['DISP_SCREEN'].currentWidget.hide()
+            globals()['DISP_SCREEN'].rowCount.show()
+            globals()['DISP_SCREEN'].currentWidget = globals()['DISP_SCREEN'].rowCount
+            dct = globals()['RowCountDict']
+            lst = dct[globals()['COMPONENTS'][1]]
+            globals()['DISP_SCREEN'].rowCount.setData(lst, "Table Name; Row Count;")
 class Task():
-    def __init__(self, op, schema, localid):
+    def __init__(self, op, schema = None, localid = None):
         self.schema = schema
         self.op = op
         self.status = 0
@@ -93,10 +124,13 @@ class Task():
             runSQLQuery(sqlcommand, globals()['PROPS']['System_Username'], globals()['LogPipe'])
         elif self.op == 2:
             sqlcommand = bytes('@sqls/CountRows '+ self.schema, 'utf-8')
-            runSQLQuery(sqlcommand, self.schema, sys.__stdout__)
+            runSQLQuery(sqlcommand, self.schema, PIPE)
+            readRows()
         elif self.op == 3:
             sqlcommand = bytes('@sqls/InvalidObjects '+ self.schema, 'utf-8')
-            runSQLQuery(sqlcommand, self.schema, sys.__stdout__)
+            runSQLQuery(sqlcommand, self.schema, PIPE)
+        elif self.op == 100:
+            pass
 class UpdateSignal(QObject):
     updateTask = pyqtSignal(Task)
 
@@ -153,10 +187,11 @@ def prepareTasks():
         imgLbl.setPixmap(pixmap)
         globals()['DISP_SCREEN'].statGather.rightList.append(imgLbl)
         globals()['DISP_SCREEN'].statGather.rightLayout.addWidget(globals()['DISP_SCREEN'].statGather.rightList[-1])
-        q.append(Task(1,comp, comp_i))
+        # q.append(Task(1,comp, comp_i))
     for comp_i in range(len(globals()['COMPONENTS'])):
         comp = globals()['COMPONENTS'][comp_i]
         q.append(Task(2,comp, comp_i))
+    q.append(Task(100))
     for comp_i in range(len(globals()['COMPONENTS'])):
         comp = globals()['COMPONENTS'][comp_i]
         q.append(Task(3,comp, comp_i))
@@ -306,7 +341,11 @@ class Window(QMainWindow):
         loadPropAction.setShortcut("Ctrl+L")
         loadPropAction.setStatusTip('Load upgrade.properties')
         loadPropAction.triggered.connect(self.readProperties)
+        exitAction= QAction("&Exit", self)
+        exitAction.setStatusTip('Exit the Program')
+        exitAction.triggered.connect(self.close)
         fileMenu.addAction(loadPropAction)
+        fileMenu.addAction(exitAction)
 
         contentScreen = QWidget(self)
         self.setCentralWidget(contentScreen)
@@ -367,15 +406,18 @@ class Window(QMainWindow):
             globals()['vschkscr'] = VersionCheckerScreen(self.actionScreen)
             self.actionScreen.layout.addWidget(globals()['vschkscr'])
             self.connectionScreen.hide()
-            self.rightSide.imgLbl.hide()
+            self.rightSide.currentWidget.hide()
             #self.rightSide.testLbl.show()
             self.rightSide.statGather.show()
+            self.rightSide.currentWidget = self.rightSide.statGather
             prepareTasks()
         # self.vschkscr.move(100, 100)
         #self.hide()
 
     def execute(self):
         execute()
+
+
 
     def load(self):
         self.readProperties()
