@@ -74,7 +74,25 @@ class ConnectionScreen(QWidget):
 class DisplayScreen(QWidget):
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
-        self.layout = QVBoxLayout(self)
+
+        self.outerlayout = QVBoxLayout(self)
+
+        scroll = QScrollArea(self)
+        self.outerlayout.addWidget(scroll)  
+        scroll.setWidgetResizable(True)
+
+        scrollContent = QWidget(scroll)
+
+        p = scrollContent.palette()
+        p.setColor(scrollContent.backgroundRole(), Qt.white)
+        scrollContent.setPalette(p)
+        scrollContent.setAutoFillBackground(True)
+
+        self.layout = QVBoxLayout(scrollContent)
+        scrollContent.setLayout(self.layout)
+
+        scroll.setWidget(scrollContent)
+
         self.imgLbl = QLabel(self)
         self.layout.addWidget(self.imgLbl)
         pixmap = QPixmap('images/logoBIGscaled.jpg')
@@ -88,28 +106,35 @@ class DisplayScreen(QWidget):
         self.layout.addWidget(self.statGather)
         self.statGather.hide()
 
-        self.rowCount = RowCountScreen(self)
-        self.layout.addWidget(self.rowCount)
-        self.rowCount.hide()
+        self.tview = TableViewScreen(self)
+        self.layout.addWidget(self.tview)
+        self.tview.hide()
+
         self.currentWidget = self.imgLbl
 
-    def sizeHint(self):
-        return QSize(640,700)
 
-class RowCountScreen(QTableWidget):
+class TableViewScreen(QTableWidget):
     def __init__(self,parent=None):
         QTableWidget.__init__(self)
+        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.cols = 2
+
     def setData(self, lst, header):
-        self.setRowCount(len(lst))
-        self.setColumnCount(2)
-        self.setHorizontalHeaderLabels(header.split(";"))
-        self.setColumnWidth(0, self.width()/2)
-        self.setColumnWidth(1, self.width()/2)
+        rows = len(lst)
+        self.setRowCount(rows)
+        collbls = header.split(";")
+        cols = len(collbls)
+        self.setColumnCount(cols)
+        self.setHorizontalHeaderLabels(collbls)
         curRow = 0
-        for tb, cnt in lst:
-            self.setItem(curRow,0, QTableWidgetItem(tb))
-            self.setItem(curRow,1, QTableWidgetItem(cnt))
+        for row in lst:
+            for col_i in range(len(row)):
+                self.setItem(curRow,col_i, QTableWidgetItem(row[col_i]))
             curRow += 1
+        self.cols = cols
+    def resizeEvent(self, event):
+        self.setColumnWidth(0, event.size().width()/self.cols)
+        self.setColumnWidth(1, event.size().width()/self.cols)
 
 class StatGatherScreen(QWidget):
     def __init__(self,parent=None):

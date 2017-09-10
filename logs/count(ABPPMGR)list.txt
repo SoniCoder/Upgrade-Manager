@@ -145,11 +145,11 @@ MD$_AT_AUDIT_FIELD                                                              
 MD$_AT_REF_FIELD                                                                                                                            0                                                           
 MD$_AUDIT_TRAIL                                                                                                                             2                                                           
 MD$_CATEGORY                                                                                                                              103                                                           
-MD$_DATA_DOMAIN                                                                                                                           159                                                           
+MD$_DATA_DOMAIN                                                                                                                           112                                                           
 MD$_DATA_DOMAIN_CODEMST                                                                                                                     5                                                           
 MD$_DATA_DOMAIN_LOOKUP                                                                                                                      0                                                           
 MD$_DATA_DOMAIN_SQLLOOKUP                                                                                                                   0                                                           
-MD$_DATA_DOMAIN_VALUE                                                                                                                     408                                                           
+MD$_DATA_DOMAIN_VALUE                                                                                                                     267                                                           
 MD$_DATA_PERSIST                                                                                                                           36                                                           
 MD$_DATA_PERSIST_VALIDATION                                                                                                                 1                                                           
 MD$_DOCUMENT                                                                                                                              897                                                           
@@ -198,7 +198,7 @@ MD$_WF_CONNECTOR_VIEW                                                           
 MD$_WF_DASHBOARD_VIEW                                                                                                                     308                                                           
 MD$_WF_GROUP_VIEW                                                                                                                           4                                                           
 MD$_WF_NODE                                                                                                                             2,366                                                           
-MD$_WF_NODE_PGL_MAP                                                                                                                       391                                                           
+MD$_WF_NODE_PGL_MAP                                                                                                                       386                                                           
 MD$_WF_NODE_VIEW                                                                                                                            0                                                           
 MD$_WF_TEXT_VIEW                                                                                                                            5                                                           
 MD$_WF_VARIABLE                                                                                                                         1,474                                                           
@@ -303,8 +303,8 @@ SYS_NC_SQLS                                                                     
 SYS_PARENT_DETAILS                                                                                                                          0                                                           
 SYS_PERSIST_SQL                                                                                                                             0                                                           
 SYS_ROWNUM_INFO                                                                                                                             0                                                           
-SYS_SERVICE_MAP                                                                                                                             1                                                           
-SYS_TABLE_MAP                                                                                                                               9                                                           
+SYS_SERVICE_MAP                                                                                                                             0                                                           
+SYS_TABLE_MAP                                                                                                                               0                                                           
 SYS_UPLD_MAP                                                                                                                                0                                                           
 S_E2E_CONSTRAINTS                                                                                                                           0                                                           
 S_E2E_CONSTRAINTS_TMPTABS                                                                                                                   0                                                           
