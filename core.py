@@ -17,6 +17,43 @@ from config import *
 
 def connect():
     dbpath = globals()['PROPS']['TargetServer'] + ":" + globals()['PROPS']['Port'] + "/" + globals()['PROPS']['Service']
+    
+    print("Checking Connection with SYSTEM USER")
+    username, password = globals()['SYSTEM_USER_KEYS']
+    try:
+        con = cx_Oracle.connect(globals()['PROPS'][username], globals()['PROPS'][password], dbpath)
+        print("Connection Successful")
+        con.close()
+    except Exception as e:
+        print("Connection Failed", e)
+        return (False, e, "Connection Attempt Failed! Username:%s"%(globals()['PROPS'][username]))
+    con = cx_Oracle.connect(globals()['PROPS'][username], globals()['PROPS'][password], dbpath)    
+    print("Checking JDA_SYSTEM existence")
+    cur = con.cursor()
+    cur.execute("select * from ALL_USERS where username = 'JDA_SYSTEM'")
+    cur.fetchall()
+    if(cur.rowcount==1):
+        print("User Exists")
+    else:
+        print("Creating USER JDA_SYSTEM")
+        createJDASYSTEM()
+    cur.close()
+
+    # print("Checking ABPP User existence")
+    # cur = con.cursor()
+    # cur.execute("select * from ALL_USERS where username = 'JDA_SYSTEM'")
+    # cur.fetchall()
+    # if(cur.rowcount==1):
+    #     print("User Exists")
+    # else:
+    #     print("Creating USER JDA_SYSTEM")
+    #     createJDASYSTEM()
+    # cur.close()
+
+    con.close()
+
+
+
     for username, password in globals()['SCHEMA_CREDS_KEYS']:
         print("Attempting Connection with Username %s and Password %s"%(globals()['PROPS'][username], globals()['PROPS'][password]))
         try:
@@ -28,6 +65,21 @@ def connect():
             return (False, e, "Connection Attempt Failed! Username:%s"%(globals()['PROPS'][username]))
     print()
     return (True, None, None)
+
+def createJDASYSTEM():
+    user = globals()['PROPS']['JDA_SYSTEM_Username']
+    password = globals()['PROPS']['JDA_SYSTEM_Password']  
+    sqlcommand = bytes('@'+globals()['PROPS']['JDA_HOME']+'\\config\\database\\setup\\create_jda_system '+password, 'utf-8')
+    stdout, stdin = runSQLQuery(sqlcommand, globals()['PROPS']['System_Username'])
+    print(stdout.decode('ascii'))
+    
+    
+def createManugistics():
+    user = globals()['PROPS']['JDA_SYSTEM_Username']
+    print("Creating the ManugisticsPkg table in the JDA System schema")
+    sqlcommand = bytes('@'+globals()['PROPS']['JDA_HOME']+'\\config\\database\\platform\\ManugisticsPkg '+user, 'utf-8')
+    stdout, stdin = runSQLQuery(sqlcommand, user, globals()['LogPipe'])
+    
 
 class EmittingStream(QObject):
     textWritten = pyqtSignal(str)
@@ -46,6 +98,9 @@ class EmittingStream(QObject):
         Return the write file descriptor of the pipe
         """
         return self.fdWrite
+
+    def flush(self):
+        pass
 
 class LogPipe(threading.Thread):
 
@@ -119,12 +174,15 @@ def updateTable(schema):
     dct = globals()['RowCountDict']
     lst = dct[schema]
     globals()['DISP_SCREEN'].tview.setData(lst, "Table Name in schema %s; Row Count"%schema)
+    globals()['DISP_SCREEN'].currentWidget.hide()
+    globals()['DISP_SCREEN'].tview.show()
+    globals()['DISP_SCREEN'].currentWidget = globals()['DISP_SCREEN'].tview
 
 def updater(task):
     if task.labels:
-        imgLbl = globals()['DISP_SCREEN'].statGather.rightList[task.localid]
+        imgLbl = globals()['DISP_SCREEN'].progress.rightList[task.localid]
         if task.status == 1:       
-            pixmap = QPixmap('images/yellow.png')
+            pixmap = QPixmap('images/amber.png')
         elif task.status == 2:
             pixmap = QPixmap('images/green.png')
         imgLbl.setPixmap(pixmap)
@@ -164,26 +222,37 @@ def updater(task):
     elif task.op == 102:
         if task.status == 2:
             globals()['DISP_SCREEN'].currentWidget.hide()
-            globals()['DISP_SCREEN'].statGather.show()
-            globals()['DISP_SCREEN'].currentWidget = globals()['DISP_SCREEN'].statGather
+            globals()['DISP_SCREEN'].progress.show()
+            globals()['DISP_SCREEN'].currentWidget = globals()['DISP_SCREEN'].progress
 class Task():
     lblcntr = 0
-    def __init__(self, op, schema = None, labels = False, TaskName = None):
+    def __init__(self, op, schema = None, labels = False, TaskType = "Accessory Task", Action = "None"):
         self.schema = schema
         self.op = op
         self.status = 0
         self.localid = None
         self.labels = labels
+        self.TaskType = TaskType
+        self.Action = Action
         if self.labels:
-            dispLbl = QLabel(TaskName)
+            dispLbl = QCenteredLabel(TaskType)
             dispLbl.setFixedHeight(30)
-            globals()['DISP_SCREEN'].statGather.leftList.append(dispLbl)
-            globals()['DISP_SCREEN'].statGather.leftLayout.addWidget(dispLbl)
-            imgLbl = QLabel()
-            pixmap = QPixmap('images/red.png')
+            globals()['DISP_SCREEN'].progress.leftList.append(dispLbl)
+            globals()['DISP_SCREEN'].progress.leftLayout.addWidget(dispLbl)
+            globals()['DISP_SCREEN'].progress.leftLayout.addWidget(QHLine())
+
+            dispLbl = QCenteredLabel(Action)
+            dispLbl.setFixedHeight(30)            
+            globals()['DISP_SCREEN'].progress.middleList.append(dispLbl)
+            globals()['DISP_SCREEN'].progress.middleLayout.addWidget(dispLbl)
+            globals()['DISP_SCREEN'].progress.middleLayout.addWidget(QHLine())
+            
+            imgLbl = QCenteredLabel()
+            pixmap = QPixmap('images/white.png')
             imgLbl.setPixmap(pixmap)
-            globals()['DISP_SCREEN'].statGather.rightList.append(imgLbl)
-            globals()['DISP_SCREEN'].statGather.rightLayout.addWidget(globals()['DISP_SCREEN'].statGather.rightList[-1])
+            globals()['DISP_SCREEN'].progress.rightList.append(imgLbl)
+            globals()['DISP_SCREEN'].progress.rightLayout.addWidget(imgLbl)
+            globals()['DISP_SCREEN'].progress.rightLayout.addWidget(QHLine())
             self.localid = Task.lblcntr
             Task.lblcntr += 1
     def runtask(self):        
@@ -212,8 +281,24 @@ class Task():
             session = Popen(['migrate_webworks.cmd', globals()['PROPS']['WebWORKS_Password'], globals()['PROPS']['System_Username'], globals()['PROPS']['System_Password']], stdin=PIPE, stdout=globals()['LogPipe'])
             session.communicate()
             os.chdir(progPath)
+        elif self.op == 6:
+            progPath = os.getcwd()
+            scriptFolder = globals()['PROPS']['JDA_HOME']+'\\config\\database\\monitor\\migration\\'
+            os.chdir(scriptFolder)
+            session = Popen(['premigrate_monitor.cmd', globals()['PROPS']['Monitor_Password'], globals()['PROPS']['WebWORKS_Password'], globals()['PROPS']['System_Username'], globals()['PROPS']['System_Password']], stdin=PIPE, stdout=globals()['LogPipe'])
+            session.communicate()
+            os.chdir(progPath)
+        elif self.op == 7:
+            progPath = os.getcwd()
+            scriptFolder = globals()['PROPS']['JDA_HOME']+'\\config\\database\\monitor\\migration\\'
+            os.chdir(scriptFolder)
+            session = Popen(['migrate_monitor.cmd', globals()['PROPS']['Monitor_Password'], globals()['PROPS']['WebWORKS_Password'], globals()['PROPS']['System_Username'], globals()['PROPS']['System_Password']], stdin=PIPE, stdout=globals()['LogPipe'])
+            session.communicate()
+            os.chdir(progPath)
         elif self.op == 102:
             sleep(3)
+        elif self.op == 103:
+            createManugistics()
 class UpdateSignal(QObject):
     updateTask = pyqtSignal(Task)
 
@@ -227,7 +312,7 @@ class prThread(threading.Thread):
         while q:
             task = q[0]
             sleep(0.5)
-            print("Running Task",task.op,task.schema)
+            print("Running Task",task.TaskType,task.schema)
             sleep(0.5)
             task.status = 1
             sig.emit(task)
@@ -245,7 +330,8 @@ def execute():
     stdout, stderr = p.communicate()
 
 def init():
-    globals()['SCHEMA_CREDS_KEYS'] = [('System_Username', 'System_Password'), ('WebWORKS_Username', 'WebWORKS_Password'), ('ABPP_Username', 'ABPP_Password'), ('Monitor_Username', 'Monitor_Password'), ('JDA_SYSTEM_Username', 'JDA_SYSTEM_Password'), ('SCPO_Username', 'SCPO_Password')]
+    globals()['SYSTEM_USER_KEYS'] = ('System_Username', 'System_Password')
+    globals()['SCHEMA_CREDS_KEYS'] = [('WebWORKS_Username', 'WebWORKS_Password'), ('ABPP_Username', 'ABPP_Password'), ('Monitor_Username', 'Monitor_Password'), ('JDA_SYSTEM_Username', 'JDA_SYSTEM_Password'), ('SCPO_Username', 'SCPO_Password')]
     globals()['CRED_DICT'] = {
         'System_Username':'System_Password', 
         'WebWORKS_Username':'WebWORKS_Password',
@@ -260,26 +346,28 @@ def init():
     globals()['LogPipe'] = LogPipe()
 def prepareTasks():
     q = globals()['TQueue']
-    for comp_i in range(len(globals()['COMPONENTS'])):
-        comp = globals()['COMPONENTS'][comp_i]
-        q.append(Task(1,comp, labels = True, TaskName = 'Stat Gather: '+ comp))
+    # for comp_i in range(len(globals()['COMPONENTS'])):
+    #     comp = globals()['COMPONENTS'][comp_i]
+    #     q.append(Task(1,comp, labels = True, TaskType = 'Stat Gathering', Action = "Gathering Stats on %s"%comp))
+    # for comp_i in range(len(globals()['COMPONENTS'])):
+    #     comp = globals()['COMPONENTS'][comp_i]
+    #     q.append(Task(2,comp,labels = True, TaskType = "Row Counting", Action = "Counting Rows for %s"%comp))
+    # q.append(Task(100))
+    # for comp_i in range(len(globals()['COMPONENTS'])):
+    #     comp = globals()['COMPONENTS'][comp_i]
+    #     q.append(Task(3,comp, labels = True, TaskType = "Invalid Object Counting", Action = "Counting Invalid Objects for %s"%comp))
+    # q.append(Task(101))
+    # q.append(Task(102))
+    q.append(Task(103, 'JDA_SYSTEM', True, "Manugistics Installation", "Manugistics Installation in JDA_SYSTEM"))
 
-    for comp_i in range(len(globals()['COMPONENTS'])):
-        comp = globals()['COMPONENTS'][comp_i]
-        q.append(Task(2,comp))
-    q.append(Task(100))
-    for comp_i in range(len(globals()['COMPONENTS'])):
-        comp = globals()['COMPONENTS'][comp_i]
-        q.append(Task(3,comp))
-    q.append(Task(101))
-    q.append(Task(102))
-    comp = globals()['PROPS']['WebWORKS_Username']
-    q.append(Task(4,comp, labels = True, TaskName = 'Pre Migration: '+ comp))
-    q.append(Task(5,comp, labels = True, TaskName = 'Migration: '+ comp))
-    comp = globals()['PROPS']['Monitor_Username']
-    q.append(Task(6,comp, labels = True, TaskName = 'Pre Migration: '+ comp))
-    q.append(Task(7,comp, labels = True, TaskName = 'Migration: '+ comp))
-    
+    # comp = globals()['PROPS']['WebWORKS_Username']
+    # q.append(Task(4,comp, labels = True, TaskType = 'Pre Migration', Action = "Pre-Migrating %s"%comp))
+    # q.append(Task(5,comp, labels = True, TaskType = 'Migration', Action = "Migrating %s"%comp))
+    # comp = globals()['PROPS']['Monitor_Username']
+    # q.append(Task(6,comp, labels = True, TaskType = 'Pre Migration', Action = "Pre-Migrating %s"%comp))
+    # q.append(Task(7,comp, labels = True, TaskType = 'Migration', Action = "Migrating %s"%comp))
+    for i in range(5):
+        q.append(Task(200+i,":P", True, 'Migration: '+ str(i), "HAHAHA"))    
 
 
 def migrate():
@@ -373,19 +461,20 @@ def runSQLQuery(sqlCommand, user, out = PIPE):
 class VersionCheckerScreen(QWidget):
     def __init__(self, parent = None):     
         QWidget.__init__(self, parent)
-        self.setGeometry(50, 50, 400, 40*len(globals()['COMPONENTS']) + 60)
+        self.arch = QVBoxLayout(self)
+        # self.setGeometry(50, 50, 400, 40*len(globals()['COMPONENTS']) + 60)
         self.design()
     
     def design(self):
-        vtable = QTableWidget(self)
-        tableWidth = 400
-        vtable.move(0, 20)
-        vtable.resize(tableWidth, 40*len(globals()['COMPONENTS']))
+        vtable = ComponentTable(self)
+        # tableWidth = 400
+        # vtable.move(0, 20)
+        # vtable.resize(tableWidth, 40*len(globals()['COMPONENTS']))
         vtable.setRowCount(len(globals()['COMPONENTS']))
         vtable.setColumnCount(3)
-        vtable.setColumnWidth(0, tableWidth/3 - 6)
-        vtable.setColumnWidth(1, tableWidth/3 - 6)
-        vtable.setColumnWidth(2, tableWidth/3 - 6)
+        # vtable.setColumnWidth(0, tableWidth/3 - 6)
+        # vtable.setColumnWidth(1, tableWidth/3 - 6)
+        # vtable.setColumnWidth(2, tableWidth/3 - 6)
         vtable.setHorizontalHeaderLabels("Component;Current Version;Target Version;".split(";"))
 
         curRow = 0
@@ -396,12 +485,10 @@ class VersionCheckerScreen(QWidget):
             curRow += 1
 
         self.btn = QPushButton("Start Migration Procedure", self)
-        self.btn.move(20,self.height() - 20)
+        # self.btn.move(20,self.height() - 20)
         self.btn.clicked.connect(migrate)
-        vtable.setEditTriggers(QAbstractItemView.NoEditTriggers)
-
-    def sizeHint(self):
-        return QSize(400,300)
+        self.arch.addWidget(vtable)
+        self.arch.addWidget(self.btn)
 class Window(QMainWindow):
     def __init__(self):     
         QMainWindow.__init__(self)
@@ -423,7 +510,9 @@ class Window(QMainWindow):
         self.statusBar()
         mainMenu = self.menuBar()
         fileMenu = mainMenu.addMenu('&File')
+        viewMenu = mainMenu.addMenu('&View')
         premgrMenu = mainMenu.addMenu('&Pre-Migration')
+        postmgrMenu = mainMenu.addMenu('&Post-Migration')
         loadPropAction= QAction("&Load Property File", self)
         loadPropAction.setShortcut("Ctrl+L")
         loadPropAction.setStatusTip('Load upgrade.properties')
@@ -435,6 +524,10 @@ class Window(QMainWindow):
         fileMenu.addAction(exitAction)
         rowCounts = premgrMenu.addMenu('&Row Counts')
         globals()['RowCMenu'] = rowCounts
+        viewProgressAction= QAction("&Progress", self)
+        viewProgressAction.triggered.connect(self.viewProgress)
+        viewMenu.addAction(viewProgressAction)
+        
         contentScreen = QWidget(self)
         self.setCentralWidget(contentScreen)
 
@@ -496,8 +589,8 @@ class Window(QMainWindow):
             self.connectionScreen.hide()
             self.rightSide.currentWidget.hide()
             #self.rightSide.testLbl.show()
-            self.rightSide.statGather.show()
-            self.rightSide.currentWidget = self.rightSide.statGather
+            self.rightSide.progress.show()
+            self.rightSide.currentWidget = self.rightSide.progress
             prepareTasks()
         # self.vschkscr.move(100, 100)
         #self.hide()
@@ -531,3 +624,8 @@ class Window(QMainWindow):
         self.connectionScreen.port.setText(globals()['PROPS']['Port'])
         self.connectionScreen.sid.setText(globals()['PROPS']['SID'])
         self.connectionScreen.service.setText(globals()['PROPS']['Service'])
+
+    def viewProgress(self):
+        self.rightSide.currentWidget.hide()
+        self.rightSide.progress.show()
+        self.rightSide.currentWidget = self.rightSide.progress

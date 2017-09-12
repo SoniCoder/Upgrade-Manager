@@ -8,6 +8,22 @@ class ActionScreen(QWidget):
         self.layout = QVBoxLayout(self)
     def sizeHint(self):
         return QSize(400,300)
+
+class QCenteredLabel(QLabel):
+    def __init__(self, *args, **kwargs):
+        QLabel.__init__(self, *args, **kwargs)
+        self.setAlignment(Qt.AlignCenter)
+
+class ComponentTable(QTableWidget):
+    def __init__(self, parent = None):
+        QTableWidget.__init__(self, parent)
+        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.cols = 3
+    def resizeEvent(self, event):
+        self.setColumnWidth(0, event.size().width()/self.cols)
+        self.setColumnWidth(1, event.size().width()/self.cols)
+        self.setColumnWidth(2, event.size().width()/self.cols)
+
 class ConsoleTE(QTextEdit):
     def __init__(self, parent=None):
         QTextEdit.__init__(self, parent)
@@ -74,6 +90,11 @@ class ConnectionScreen(QWidget):
 class DisplayScreen(QWidget):
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
+        # font_db = QFontDatabase()
+        # font_id = font_db.addApplicationFont("fonts/UbuntuMono-R.ttf")
+        # families = font_db.applicationFontFamilies(font_id)[0]
+        # font = QFont(families, 10)
+        # self.setFont(font)
 
         self.outerlayout = QVBoxLayout(self)
 
@@ -84,7 +105,9 @@ class DisplayScreen(QWidget):
         scrollContent = QWidget(scroll)
 
         p = scrollContent.palette()
-        p.setColor(scrollContent.backgroundRole(), Qt.white)
+        bgcol = QColor(176,224,230)
+        p.setColor(scrollContent.backgroundRole(), bgcol)
+        
         scrollContent.setPalette(p)
         scrollContent.setAutoFillBackground(True)
 
@@ -93,18 +116,16 @@ class DisplayScreen(QWidget):
 
         scroll.setWidget(scrollContent)
 
-        self.imgLbl = QLabel(self)
+
+
+        self.imgLbl = JDALogoLabel(self)
         self.layout.addWidget(self.imgLbl)
         pixmap = QPixmap('images/logoBIGscaled.jpg')
         self.imgLbl.setPixmap(pixmap)
 
-        self.testLbl = QLabel("0", self)
-        self.layout.addWidget(self.testLbl)
-        self.testLbl.hide()
-
-        self.statGather = StatGatherScreen(self)
-        self.layout.addWidget(self.statGather)
-        self.statGather.hide()
+        self.progress = ProgressScreen(self)
+        self.layout.addWidget(self.progress)
+        self.progress.hide()
 
         self.tview = TableViewScreen(self)
         self.layout.addWidget(self.tview)
@@ -112,6 +133,14 @@ class DisplayScreen(QWidget):
 
         self.currentWidget = self.imgLbl
 
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.outerlayout.setContentsMargins(0, 0, 0, 0)
+
+class JDALogoLabel(QLabel):
+    def __init__(self, *args, **kwargs):
+        QLabel.__init__(self)
+        self.setScaledContents( True )
+        self.setSizePolicy( QSizePolicy.Ignored, QSizePolicy.Ignored )
 
 class TableViewScreen(QTableWidget):
     def __init__(self,parent=None):
@@ -136,23 +165,48 @@ class TableViewScreen(QTableWidget):
         self.setColumnWidth(0, event.size().width()/self.cols)
         self.setColumnWidth(1, event.size().width()/self.cols)
 
-class StatGatherScreen(QWidget):
+class ProgressScreen(QWidget):
     def __init__(self,parent=None):
         QWidget.__init__(self)
         self.layout = QHBoxLayout(self)
         self.leftSide = QWidget()
+        self.layout.addWidget(self.leftSide)
         self.leftLayout = QVBoxLayout(self.leftSide)
         self.leftLayout.setAlignment(Qt.AlignTop)
+        self.layout.addWidget(QVLine())
+        self.leftHeading = QCenteredLabel("Task Type")
+        self.leftLayout.addWidget(self.leftHeading)
+        self.leftLayout.addWidget(QHLine())
+        self.leftHeading.setObjectName("HeadingLeft")
+
+        self.middleSide = QWidget()
+        self.layout.addWidget(self.middleSide)
+        self.middleLayout = QVBoxLayout(self.middleSide)
+        self.middleLayout.setAlignment(Qt.AlignTop)
+        self.middleHeading = QCenteredLabel("Action")
+        self.middleLayout.addWidget(self.middleHeading)
+        self.middleLayout.addWidget(QHLine())
+        self.middleHeading.setObjectName("HeadingMiddle")
+
+        self.layout.addWidget(QVLine())
         self.rightSide = QWidget()
         self.rightLayout = QVBoxLayout(self.rightSide)
         self.rightLayout.setAlignment(Qt.AlignTop)
-        self.layout.addWidget(self.leftSide)
         self.layout.addWidget(self.rightSide)
         self.leftList = []
         self.rightList = []
+        self.middleList = []
+        self.rightHeading = QCenteredLabel("Status")
+        self.rightHeading.setObjectName("HeadingRight")
+        self.rightLayout.addWidget(self.rightHeading)
+        self.rightLayout.addWidget(QHLine())
+        
+        self.setStyleSheet('#HeadingMiddle, #HeadingLeft, #HeadingRight { font-weight: bold; }')
 
-
-
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.leftLayout.setContentsMargins(0, 0, 0, 0)
+        self.middleLayout.setContentsMargins(0, 0, 0, 0)
+        self.rightLayout.setContentsMargins(0, 0, 0, 0)
 
 class QVLine(QFrame):
     def __init__(self, parent=None):

@@ -1,0 +1,29 @@
+Enter the Foundation Schema Name:
+-------------------------------- 
+
+12-SEP-17                                                                       
+USER is "JDA_SYSTEM"
+
+
+PL/SQL procedure successfully completed.
+
+old   2:   EXECUTE IMMEDIATE 'INSERT INTO manugistics_schema VALUES (UPPER(''&&foundation_schema_name''), ''WebWORKS'')';
+new   2:   EXECUTE IMMEDIATE 'INSERT INTO manugistics_schema VALUES (UPPER(''JDA_SYSTEM''), ''WebWORKS'')';
+old   5:       dbms_output.put_line ('schema ''&&foundation_schema_name'', already registered in manugistics_schema');
+new   5:       dbms_output.put_line ('schema ''JDA_SYSTEM'', already registered in manugistics_schema');
+
+PL/SQL procedure successfully completed.
+
+
+Package created.
+
+No errors.
+
+Package body created.
+
+No errors.
+old   1: GRANT execute ON ManugisticsPkg TO &&foundation_schema_name
+new   1: GRANT execute ON ManugisticsPkg TO JDA_SYSTEM
+
+Grant succeeded.
+

@@ -34,3 +34,5 @@ select * from wwfmgr.csm_application;
 select * from wwfmgr.csm_schema_log   where name='DATABASE_VERSION';
 
 select * from wwfmgr.csm_schema_log  where name='SCPODB_VERSION'
+
+alter tablespace EMADATA add datafile 'C:\oracle\oradata\O12CR102\EMADATA02.DAT' size 100m;
