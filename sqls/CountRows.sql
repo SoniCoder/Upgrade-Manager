@@ -1,7 +1,7 @@
 set pages 999;
 set linesize 200
 col count format 999,999,999;
-spool logs/count(&1)list.txt
+spool count(&1)list.txt
 
 select
    table_name,

@@ -1,5 +1,0 @@
-old   1: select owner, constraint_name, table_name, status from user_constraints where owner='&1' and (status <> 'ENABLED' or validated='NOT VALIDATED')
-new   1: select owner, constraint_name, table_name, status from user_constraints where owner='EMAMGR' and (status <> 'ENABLED' or validated='NOT VALIDATED')
-
-no rows selected
-

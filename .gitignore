@@ -4,3 +4,4 @@ dist
 *.jpg
 *.pyc
 *.spec
+ARCHIVE*

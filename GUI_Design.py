@@ -27,14 +27,6 @@ class ComponentTable(QTableWidget):
 class ConsoleTE(QTextEdit):
     def __init__(self, parent=None):
         QTextEdit.__init__(self, parent)
-        # self.move(20, 0)
-        # self.resize(1240,300)
-        # policy = self.sizePolicy()
-    # 
-        # print(self.sizeAdjustPolicy())
-        #self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        
-        # self.setAlignment(Qt.AlignCenter)
         pal = QPalette()
         bgc = QColor(0, 0, 0)
         pal.setColor(QPalette.Base, bgc)
@@ -105,7 +97,7 @@ class DisplayScreen(QWidget):
         scrollContent = QWidget(scroll)
 
         p = scrollContent.palette()
-        bgcol = QColor(176,224,230)
+        bgcol = QColor(22, 54, 102)
         p.setColor(scrollContent.backgroundRole(), bgcol)
         
         scrollContent.setPalette(p)
@@ -161,14 +153,42 @@ class TableViewScreen(QTableWidget):
                 self.setItem(curRow,col_i, QTableWidgetItem(row[col_i]))
             curRow += 1
         self.cols = cols
+        # print("Firing Resize Event, cols:", self.cols)
+        # self.resize(self.geometry().width(), self.geometry().height())
+        # print("Resize Event Fired", self.cols)
+        for c_i in range(self.cols):
+            self.setColumnWidth(c_i, self.geometry().width()/self.cols)
+
     def resizeEvent(self, event):
-        self.setColumnWidth(0, event.size().width()/self.cols)
-        self.setColumnWidth(1, event.size().width()/self.cols)
+        for c_i in range(self.cols):
+            self.setColumnWidth(c_i, event.size().width()/self.cols)
 
 class ProgressScreen(QWidget):
     def __init__(self,parent=None):
         QWidget.__init__(self)
         self.layout = QHBoxLayout(self)
+
+        self.sno = QWidget()
+        self.layout.addWidget(self.sno)
+        self.snoLayout = QVBoxLayout(self.sno)
+        self.snoLayout.setAlignment(Qt.AlignTop)
+        self.layout.addWidget(QVLine())
+        self.snoHeading = QCenteredLabel("S. No.")
+        self.snoLayout.addWidget(self.snoHeading)
+        self.snoLayout.addWidget(QHLine())
+        self.snoHeading.setObjectName("Headingsno")
+
+        self.phaseSide = QWidget()
+        self.layout.addWidget(self.phaseSide)
+        self.phaseLayout = QVBoxLayout(self.phaseSide)
+        self.phaseLayout.setAlignment(Qt.AlignTop)
+        self.layout.addWidget(QVLine())
+        self.phaseHeading = QCenteredLabel("Phase")
+        self.phaseLayout.addWidget(self.phaseHeading)
+        self.phaseLayout.addWidget(QHLine())
+        self.phaseHeading.setObjectName("Headingphase")
+
+
         self.leftSide = QWidget()
         self.layout.addWidget(self.leftSide)
         self.leftLayout = QVBoxLayout(self.leftSide)
@@ -201,12 +221,14 @@ class ProgressScreen(QWidget):
         self.rightLayout.addWidget(self.rightHeading)
         self.rightLayout.addWidget(QHLine())
         
-        self.setStyleSheet('#HeadingMiddle, #HeadingLeft, #HeadingRight { font-weight: bold; }')
+        self.setStyleSheet('#HeadingMiddle, #HeadingLeft, #HeadingRight, #Headingsno, #Headingphase { font-weight: bold; } QLabel { color: white; }')
 
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.leftLayout.setContentsMargins(0, 0, 0, 0)
         self.middleLayout.setContentsMargins(0, 0, 0, 0)
         self.rightLayout.setContentsMargins(0, 0, 0, 0)
+        self.snoLayout.setContentsMargins(0, 0, 0, 0)
+        self.phaseLayout.setContentsMargins(0, 0, 0, 0)
 
 class QVLine(QFrame):
     def __init__(self, parent=None):

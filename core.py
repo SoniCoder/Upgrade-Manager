@@ -1,4 +1,5 @@
 import cx_Oracle
+import datetime
 import os
 import threading
 import sys
@@ -8,6 +9,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtChart import *
 from collections import deque
+from shutil import copyfile, copy
 from subprocess import Popen, PIPE
 from time import sleep
 
@@ -39,16 +41,17 @@ def connect():
         createJDASYSTEM()
     cur.close()
 
-    # print("Checking ABPP User existence")
-    # cur = con.cursor()
-    # cur.execute("select * from ALL_USERS where username = 'JDA_SYSTEM'")
-    # cur.fetchall()
-    # if(cur.rowcount==1):
-    #     print("User Exists")
-    # else:
-    #     print("Creating USER JDA_SYSTEM")
-    #     createJDASYSTEM()
-    # cur.close()
+    print("Checking ABPP User existence")
+    cur = con.cursor()
+    cur.execute("select * from ALL_USERS where username = 'ABPPMGR'")
+    cur.fetchall()
+    if(cur.rowcount==1):
+        print("User Exists")
+    else:
+        globals()['ABPP_CREATED'] = True
+        print("Creating USER ABPPMGR")
+        createABPPMGRUSER()
+    cur.close()
 
     con.close()
 
@@ -64,7 +67,34 @@ def connect():
             print("Connection Failed", e)
             return (False, e, "Connection Attempt Failed! Username:%s"%(globals()['PROPS'][username]))
     print()
+
     return (True, None, None)
+
+def createABPPMGRGRANTS():
+    sqlcommand = bytes('@sqls/ABPP_GRANTS', 'utf-8')
+    runSQLQuery(sqlcommand, globals()['PROPS']['System_Username'], globals()['LogPipe'])
+
+def createABPPMGRUPDATE():
+    progPath = os.getcwd()
+    scriptFolder = globals()['PROPS']['JDA_HOME']+'\\config\\database\\platform\\'
+    os.chdir(scriptFolder)
+    session = Popen(['updateAbppSchema.cmd', '-coreServices'], stdout=globals()['LogPipe'], stdin = PIPE)
+    session.communicate()
+    os.chdir(progPath)
+
+def createABPPMGRUSER():
+    password = globals()['PROPS']['ABPP_Password']  
+    sqlcommand = bytes('@'+globals()['PROPS']['JDA_HOME']+'\\config\\database\\setup\\cr_abpp_user '+password, 'utf-8')
+    stdout, stdin = runSQLQuery(sqlcommand, globals()['PROPS']['System_Username'])
+    print(stdout.decode('ascii'))
+
+def createABPPMGRSCHEMA():
+    progPath = os.getcwd()
+    scriptFolder = globals()['PROPS']['JDA_HOME']+'\\config\\database\\platform\\'
+    os.chdir(scriptFolder)
+    session = Popen(['createAbppSchema.cmd'], stdin=PIPE, stdout=globals()['LogPipe'])
+    session.communicate()
+    os.chdir(progPath)
 
 def createJDASYSTEM():
     user = globals()['PROPS']['JDA_SYSTEM_Username']
@@ -80,6 +110,23 @@ def createManugistics():
     sqlcommand = bytes('@'+globals()['PROPS']['JDA_HOME']+'\\config\\database\\platform\\ManugisticsPkg '+user, 'utf-8')
     stdout, stdin = runSQLQuery(sqlcommand, user, globals()['LogPipe'])
     
+def createLogFolders():
+    os.chdir("ARCHIVES")
+    logFolder = datetime.datetime.now().strftime("ARCHIVE_%d_%b_%Y_%H_%M_%S_0")
+    while logFolder in os.listdir():
+        split = logFolder.split('_')
+        curIndex = int(split[7])
+        nextIndex = curIndex + 1
+        split[7] = str(nextIndex)
+        logFolder = '_'.join(split)
+    os.mkdir(logFolder)
+    os.chdir(logFolder)
+    os.mkdir("PREMGR")
+    os.mkdir("MGR")
+    os.mkdir("POSTMGR")
+    print("Storing All Logs in ARCHIVES/%s"%logFolder)
+    globals()['ARCHIVEFOLDER'] = os.getcwd()
+    os.chdir(globals()['PROGDIR'])
 
 class EmittingStream(QObject):
     textWritten = pyqtSignal(str)
@@ -129,14 +176,17 @@ class LogPipe(threading.Thread):
         os.close(self.fdWrite)
 
 
-def readInvalidObjects():
-    globals()['InvalidCountDict'] = {}
-    dct = globals()['InvalidCountDict']
+def readInvalidObjects(phase):
+    globals()['InvalidCountDict'+phase] = {}
+    dct = globals()['InvalidCountDict'+phase]
+    os.chdir(globals()['ARCHIVEFOLDER'])
+    os.chdir(phase)
     for comp_i in range(len(globals()['COMPONENTS'])):
         comp = globals()['COMPONENTS'][comp_i]
+        os.chdir(comp)     
         dct[comp] = []
         lst = dct[comp]
-        fileName = "logs/" + "invalidObj(%s).txt"%comp
+        fileName = "invalidObj(%s).txt"%comp
         print("Opening File:",fileName)
         f = open(fileName)
         f.readline()
@@ -149,15 +199,20 @@ def readInvalidObjects():
             ls = line.split()
             if len(ls)!=4: break
             lst.append(ls)
+        os.chdir("..")
+    os.chdir(globals()['PROGDIR'])
 
-def readRows():
-    globals()['RowCountDict'] = {}
-    dct = globals()['RowCountDict']
+def readRows(phase):
+    globals()['RowCountDict'+phase] = {}
+    dct = globals()['RowCountDict'+phase]
+    os.chdir(globals()['ARCHIVEFOLDER'])
+    os.chdir(phase)
     for comp_i in range(len(globals()['COMPONENTS'])):
         comp = globals()['COMPONENTS'][comp_i]
+        os.chdir(comp)
         dct[comp] = []
         lst = dct[comp]
-        fileName = "logs/" + "count(%s)list.txt"%comp
+        fileName = "count(%s)list.txt"%comp
         print("Opening File:",fileName)
         f = open(fileName)
         f.readline()
@@ -168,16 +223,24 @@ def readRows():
             pair = line.split()
             if len(pair)!=2: break
             lst.append(pair)
-
-def updateTable(schema):
+        os.chdir("..")
+    os.chdir(globals()['PROGDIR'])
+def updateTable(phase, type, schema):
     print("Updating Table for schema %s"%schema)
-    dct = globals()['RowCountDict']
-    lst = dct[schema]
-    globals()['DISP_SCREEN'].tview.setData(lst, "Table Name in schema %s; Row Count"%schema)
-    globals()['DISP_SCREEN'].currentWidget.hide()
-    globals()['DISP_SCREEN'].tview.show()
-    globals()['DISP_SCREEN'].currentWidget = globals()['DISP_SCREEN'].tview
-
+    if type == "ROW":
+        dct = globals()['RowCountDict'+phase]
+        lst = dct[schema]
+        globals()['DISP_SCREEN'].tview.setData(lst, "Table Name in schema %s; Row Count"%schema)
+        globals()['DISP_SCREEN'].currentWidget.hide()
+        globals()['DISP_SCREEN'].tview.show()
+        globals()['DISP_SCREEN'].currentWidget = globals()['DISP_SCREEN'].tview
+    elif type == "INVALIDOBJ":
+        dct = globals()['InvalidCountDict'+phase]
+        lst = dct[schema]
+        globals()['DISP_SCREEN'].tview.setData(lst, "Owner; Constraint_Name; Table_Name; Status")
+        globals()['DISP_SCREEN'].currentWidget.hide()
+        globals()['DISP_SCREEN'].tview.show()
+        globals()['DISP_SCREEN'].currentWidget = globals()['DISP_SCREEN'].tview
 def updater(task):
     if task.labels:
         imgLbl = globals()['DISP_SCREEN'].progress.rightList[task.localid]
@@ -189,29 +252,28 @@ def updater(task):
         
     if task.op == 100:
         if task.status == 2:
-            readRows()
-            globals()['DISP_SCREEN'].currentWidget.hide()
-            globals()['DISP_SCREEN'].tview.show()
-            globals()['DISP_SCREEN'].currentWidget = globals()['DISP_SCREEN'].tview
-            dct = globals()['RowCountDict']
-            lst = dct[globals()['COMPONENTS'][1]]
-            globals()['DISP_SCREEN'].tview.setData(lst, "Table Name in schema %s; Row Count"%globals()['COMPONENTS'][1])
-            rowcmenu = globals()['RowCMenu']
-            print("Creating and Adding New View Row Actions")
+            readRows(task.phase)
+            rowcmenu = globals()['RowCMenu'+task.phase]
+            print("Creating and Adding New View Row Actions for Phase %s"%task.phase)
             actions = [QAction(comp, globals()['MAIN_WINDOW']) for comp in globals()['COMPONENTS']]            
-            funcs = []
             for act_i in range(len(actions)):
                 rowcmenu.addAction(actions[act_i])
-                actions[act_i].triggered.connect(lambda f, i = act_i: updateTable(globals()['COMPONENTS'][i]))
+                actions[act_i].triggered.connect(lambda f, i = act_i: updateTable(task.phase, "ROW", globals()['COMPONENTS'][i]))
     elif task.op == 101:
         if task.status == 2:
-            readInvalidObjects()
-            globals()['DISP_SCREEN'].currentWidget.hide()
-            globals()['DISP_SCREEN'].tview.show()
-            globals()['DISP_SCREEN'].currentWidget = globals()['DISP_SCREEN'].tview
-            dct = globals()['InvalidCountDict']
-            lst = dct[globals()['COMPONENTS'][4]]
-            globals()['DISP_SCREEN'].tview.setData(lst, "Owner; Constraint_Name; Table_Name; Status")
+            readInvalidObjects(task.phase)
+            menu = globals()["InvalidCMenu"+task.phase]
+            print("Creating and Adding New View Invalid Object Count Actions for Phase %s"%task.phase)
+            actions = [QAction(comp, globals()['MAIN_WINDOW']) for comp in globals()['COMPONENTS']]            
+            for act_i in range(len(actions)):
+                menu.addAction(actions[act_i])
+                actions[act_i].triggered.connect(lambda f, i = act_i: updateTable(task.phase, "INVALIDOBJ", globals()['COMPONENTS'][i]))
+            # globals()['DISP_SCREEN'].currentWidget.hide()
+            # globals()['DISP_SCREEN'].tview.show()
+            # globals()['DISP_SCREEN'].currentWidget = globals()['DISP_SCREEN'].tview
+            # dct = globals()['InvalidCountDict']
+            # lst = dct[globals()['COMPONENTS'][4]]
+            # globals()['DISP_SCREEN'].tview.setData(lst, "Owner; Constraint_Name; Table_Name; Status")
             # rowcmenu = globals()['RowCMenu']
             # print("Creating and Adding New View Row Actions")
             # actions = [QAction(comp, globals()['MAIN_WINDOW']) for comp in globals()['COMPONENTS']]            
@@ -219,22 +281,30 @@ def updater(task):
             # for act_i in range(len(actions)):
             #     rowcmenu.addAction(actions[act_i])
             #     actions[act_i].triggered.connect(lambda f, i = act_i: updateTable(globals()['COMPONENTS'][i]))
-    elif task.op == 102:
-        if task.status == 2:
-            globals()['DISP_SCREEN'].currentWidget.hide()
-            globals()['DISP_SCREEN'].progress.show()
-            globals()['DISP_SCREEN'].currentWidget = globals()['DISP_SCREEN'].progress
 class Task():
     lblcntr = 0
-    def __init__(self, op, schema = None, labels = False, TaskType = "Accessory Task", Action = "None"):
+    def __init__(self, op, schema = None, labels = False, TaskType = "Accessory Task", Action = "None", phase = "None"):
         self.schema = schema
         self.op = op
         self.status = 0
-        self.localid = None
+        self.localid = 0
         self.labels = labels
+        self.phase = phase
         self.TaskType = TaskType
         self.Action = Action
         if self.labels:
+            self.localid = Task.lblcntr
+            dispLbl = QCenteredLabel(str(self.localid + 1))
+            dispLbl.setFixedHeight(30)
+            globals()['DISP_SCREEN'].progress.snoLayout.addWidget(dispLbl)
+            globals()['DISP_SCREEN'].progress.snoLayout.addWidget(QHLine())
+
+            dispLbl = QCenteredLabel(self.phase)
+            dispLbl.setFixedHeight(30)
+            globals()['DISP_SCREEN'].progress.phaseLayout.addWidget(dispLbl)
+            globals()['DISP_SCREEN'].progress.phaseLayout.addWidget(QHLine())
+
+
             dispLbl = QCenteredLabel(TaskType)
             dispLbl.setFixedHeight(30)
             globals()['DISP_SCREEN'].progress.leftList.append(dispLbl)
@@ -253,52 +323,87 @@ class Task():
             globals()['DISP_SCREEN'].progress.rightList.append(imgLbl)
             globals()['DISP_SCREEN'].progress.rightLayout.addWidget(imgLbl)
             globals()['DISP_SCREEN'].progress.rightLayout.addWidget(QHLine())
-            self.localid = Task.lblcntr
             Task.lblcntr += 1
     def runtask(self):        
         if self.op == 1:
+            os.chdir(globals()['ARCHIVEFOLDER'])
+            os.chdir(self.phase)
+            os.chdir(self.schema)
             sqlcommand = bytes('@'+globals()['PROPS']['JDA_HOME']+'\\config\\database\\scpoweb\\gather_db_stats '+self.schema, 'utf-8')
             runSQLQuery(sqlcommand, globals()['PROPS']['System_Username'], globals()['LogPipe'])
+            os.chdir(globals()['PROGDIR'])
         elif self.op == 2:
-            sqlcommand = bytes('@sqls/CountRows '+ self.schema, 'utf-8')
-            runSQLQuery(sqlcommand, self.schema, PIPE)
+            os.chdir(globals()['ARCHIVEFOLDER'])
+            os.chdir(self.phase)
+            os.chdir(self.schema)
+            sqlcommand = bytes("@'%s\\sqls\\CountRows'"%globals()['PROGDIR']+ self.schema, 'utf-8')
+            runSQLQuery(sqlcommand, self.schema, sys.__stdout__)
+            os.chdir(globals()['PROGDIR'])
+            
         elif self.op == 3:
-            sqlcommand = bytes('@sqls/InvalidObjects '+ self.schema, 'utf-8')
-            runSQLQuery(sqlcommand, self.schema, PIPE)
+            os.chdir(globals()['ARCHIVEFOLDER'])
+            os.chdir(self.phase)
+            os.chdir(self.schema)
+            sqlcommand = bytes("@'%s\\sqls\\InvalidObjects'"%globals()['PROGDIR']+ self.schema, 'utf-8')
+            runSQLQuery(sqlcommand, self.schema, sys.__stdout__)
+            os.chdir(globals()['PROGDIR'])
+            
         elif self.op == 4:
             progPath = os.getcwd()
             scriptFolder = globals()['PROPS']['JDA_HOME']+'\\config\\database\\platform\\migration\\'
             os.chdir(scriptFolder)
-
             session = Popen(['premigrate_webworks.cmd', globals()['PROPS']['WebWORKS_Password'], globals()['PROPS']['System_Username'], globals()['PROPS']['System_Password']], stdin=PIPE, stdout=globals()['LogPipe'])
             session.communicate()
+            os.chdir(globals()["ARCHIVEFOLDER"])
+            os.chdir("PREMGR")
+            BACKUPFILES = ['premigrate.log', 'gen_refschema.log', 'platform_db_creation.log', 'refsch_check.log', 'r_query.log']
+            for f in BACKUPFILES:
+                copy(scriptFolder+f, self.schema)
             os.chdir(progPath)
-            pass
         elif self.op == 5:
-            progPath = os.getcwd()
             scriptFolder = globals()['PROPS']['JDA_HOME']+'\\config\\database\\platform\\migration\\'
             os.chdir(scriptFolder)
             session = Popen(['migrate_webworks.cmd', globals()['PROPS']['WebWORKS_Password'], globals()['PROPS']['System_Username'], globals()['PROPS']['System_Password']], stdin=PIPE, stdout=globals()['LogPipe'])
             session.communicate()
-            os.chdir(progPath)
+            os.chdir(globals()["ARCHIVEFOLDER"])
+            os.chdir("MGR")
+            BACKUPFILES = ['migrate_webworks.log', 'platform_db_creation.log', 'gen_refschema.log']
+            for f in BACKUPFILES:
+                copy(scriptFolder+f, self.schema)
+            os.chdir(globals()['PROGDIR'])
         elif self.op == 6:
-            progPath = os.getcwd()
             scriptFolder = globals()['PROPS']['JDA_HOME']+'\\config\\database\\monitor\\migration\\'
             os.chdir(scriptFolder)
             session = Popen(['premigrate_monitor.cmd', globals()['PROPS']['Monitor_Password'], globals()['PROPS']['WebWORKS_Password'], globals()['PROPS']['System_Username'], globals()['PROPS']['System_Password']], stdin=PIPE, stdout=globals()['LogPipe'])
             session.communicate()
-            os.chdir(progPath)
+            os.chdir(globals()["ARCHIVEFOLDER"])
+            os.chdir("PREMGR")
+            BACKUPFILES = ['premigrate.log', 'platform_db_creation.log', 'gen_refschema.log', 'refsch_check.log']
+            for f in BACKUPFILES:
+                copy(scriptFolder+f, self.schema)
+            os.chdir(globals()['PROGDIR'])
         elif self.op == 7:
-            progPath = os.getcwd()
             scriptFolder = globals()['PROPS']['JDA_HOME']+'\\config\\database\\monitor\\migration\\'
             os.chdir(scriptFolder)
             session = Popen(['migrate_monitor.cmd', globals()['PROPS']['Monitor_Password'], globals()['PROPS']['WebWORKS_Password'], globals()['PROPS']['System_Username'], globals()['PROPS']['System_Password']], stdin=PIPE, stdout=globals()['LogPipe'])
             session.communicate()
-            os.chdir(progPath)
-        elif self.op == 102:
-            sleep(3)
+            os.chdir(globals()["ARCHIVEFOLDER"])
+            os.chdir("MGR")
+            BACKUPFILES = ['migrate_monitor.log', 'platform_db_creation.log', 'gen_refschema.log', 'ema_populate_wwf.log', 'enroll_app_schema.log']
+            for f in BACKUPFILES:
+                copy(scriptFolder+f, self.schema)
+            os.chdir(globals()['PROGDIR'])
         elif self.op == 103:
             createManugistics()
+        elif self.op == 104:
+            createABPPMGRSCHEMA()
+        elif self.op == 105:
+            createABPPMGRGRANTS()
+        elif self.op == 106:
+            createABPPMGRUPDATE()
+        elif self.op == 107:
+            sqlcommand = bytes('@sqls/custompremgr', 'utf-8')
+            runSQLQuery(sqlcommand, 'JDA_SYSTEM', sys.__stdout__)
 class UpdateSignal(QObject):
     updateTask = pyqtSignal(Task)
 
@@ -320,16 +425,15 @@ class prThread(threading.Thread):
             task.runtask()
             task.status = 2
             sig.emit(task)
+
+
             q.popleft()
         sleep(0.5)
         print("Migration Procedure Completed")
         sleep(0.5)
 
-def execute():
-    p = Popen("sample.bat", cwd=os.getcwd())
-    stdout, stderr = p.communicate()
-
 def init():
+    globals()['PROGDIR'] = os.getcwd()
     globals()['SYSTEM_USER_KEYS'] = ('System_Username', 'System_Password')
     globals()['SCHEMA_CREDS_KEYS'] = [('WebWORKS_Username', 'WebWORKS_Password'), ('ABPP_Username', 'ABPP_Password'), ('Monitor_Username', 'Monitor_Password'), ('JDA_SYSTEM_Username', 'JDA_SYSTEM_Password'), ('SCPO_Username', 'SCPO_Password')]
     globals()['CRED_DICT'] = {
@@ -344,28 +448,51 @@ def init():
     globals()['UpdateSignal'] = UpdateSignal()
     globals()['UpdateSignal'].updateTask.connect(updater)
     globals()['LogPipe'] = LogPipe()
+    globals()['ABPP_CREATED'] = False
+    createLogFolders()
+
 def prepareTasks():
     q = globals()['TQueue']
-    # for comp_i in range(len(globals()['COMPONENTS'])):
-    #     comp = globals()['COMPONENTS'][comp_i]
-    #     q.append(Task(1,comp, labels = True, TaskType = 'Stat Gathering', Action = "Gathering Stats on %s"%comp))
-    # for comp_i in range(len(globals()['COMPONENTS'])):
-    #     comp = globals()['COMPONENTS'][comp_i]
-    #     q.append(Task(2,comp,labels = True, TaskType = "Row Counting", Action = "Counting Rows for %s"%comp))
-    # q.append(Task(100))
-    # for comp_i in range(len(globals()['COMPONENTS'])):
-    #     comp = globals()['COMPONENTS'][comp_i]
-    #     q.append(Task(3,comp, labels = True, TaskType = "Invalid Object Counting", Action = "Counting Invalid Objects for %s"%comp))
-    # q.append(Task(101))
-    # q.append(Task(102))
-    q.append(Task(103, 'JDA_SYSTEM', True, "Manugistics Installation", "Manugistics Installation in JDA_SYSTEM"))
+    for comp_i in range(len(globals()['COMPONENTS'])):
+        comp = globals()['COMPONENTS'][comp_i]
+        q.append(Task(1,comp, True, 'Stat Gathering', "Gathering Stats on %s"%comp, "PREMGR"))
+    for comp_i in range(len(globals()['COMPONENTS'])):
+        comp = globals()['COMPONENTS'][comp_i]
+        q.append(Task(2,comp, True, "Row Counting", "Counting Rows for %s"%comp, "PREMGR"))
+    q.append(Task(100, phase ="PREMGR"))
+    for comp_i in range(len(globals()['COMPONENTS'])):
+        comp = globals()['COMPONENTS'][comp_i]
+        q.append(Task(3,comp, True, "Invalid Object Counting", "Counting Invalid Objects for %s"%comp, "PREMGR"))
+    q.append(Task(101, phase = "PREMGR"))
 
-    # comp = globals()['PROPS']['WebWORKS_Username']
-    # q.append(Task(4,comp, labels = True, TaskType = 'Pre Migration', Action = "Pre-Migrating %s"%comp))
-    # q.append(Task(5,comp, labels = True, TaskType = 'Migration', Action = "Migrating %s"%comp))
-    # comp = globals()['PROPS']['Monitor_Username']
-    # q.append(Task(6,comp, labels = True, TaskType = 'Pre Migration', Action = "Pre-Migrating %s"%comp))
-    # q.append(Task(7,comp, labels = True, TaskType = 'Migration', Action = "Migrating %s"%comp))
+    
+    q.append(Task(107, 'None', True, "Custom Script", "Running Custom Pre-Migration Script", "PREMGR"))
+    q.append(Task(103, 'JDA_SYSTEM', True, "Manugistics Installation", "Manugistics Installation in JDA_SYSTEM", "PREMGR"))
+    if globals()['ABPP_CREATED']:
+        q.append(Task(104, 'ABPPMGR', True, "Schema Creation", "Creating ABPPMGR Schema", "PREMGR"))
+    else:
+        q.append(Task(105, 'ABPPMGR', True, "Grant Providing", "Providing Grants to ABPPMGR Schema", "PREMGR"))
+        q.append(Task(106, 'ABPPMGR', True, "Schema Update", "ABPPMGR Schema Update", "PREMGR"))
+        
+    comp = globals()['PROPS']['WebWORKS_Username']
+    q.append(Task(4,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "PREMGR"))
+    q.append(Task(5,comp, True, 'Migration', "Migrating %s"%comp, "MGR"))
+    comp = globals()['PROPS']['Monitor_Username']
+    q.append(Task(6,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "PREMGR"))
+    q.append(Task(7,comp, True, 'Migration', "Migrating %s"%comp, "MGR"))
+
+    for comp_i in range(len(globals()['COMPONENTS'])):
+        comp = globals()['COMPONENTS'][comp_i]
+        q.append(Task(1,comp, True, 'Stat Gathering', "Gathering Stats on %s"%comp, "POSTMGR"))
+    for comp_i in range(len(globals()['COMPONENTS'])):
+        comp = globals()['COMPONENTS'][comp_i]
+        q.append(Task(2,comp, True, "Row Counting", "Counting Rows for %s"%comp, "POSTMGR"))
+    q.append(Task(100, phase = "POSTMGR"))
+    for comp_i in range(len(globals()['COMPONENTS'])):
+        comp = globals()['COMPONENTS'][comp_i]
+        q.append(Task(3,comp, True, "Invalid Object Counting", "Counting Invalid Objects for %s"%comp, "POSTMGR"))
+    q.append(Task(101, phase = "POSTMGR"))
+
     for i in range(5):
         q.append(Task(200+i,":P", True, 'Migration: '+ str(i), "HAHAHA"))    
 
@@ -376,6 +503,8 @@ def migrate():
     th = prThread()
     th.start()
 
+def resume():
+    pass
 
 
 def queryComponents():
@@ -406,6 +535,13 @@ def queryComponents():
 
     globals()['COMPONENTS'] = augComps
 
+    for comp in augComps:
+        for dirs in ["PREMGR", "MGR", "POSTMGR"]:
+            os.chdir(globals()['ARCHIVEFOLDER'])
+            os.chdir(dirs)
+            os.mkdir(comp)
+            
+    os.chdir(globals()['PROGDIR'])
 
     cur = con.cursor()
     print("Querying Current Version")
@@ -451,8 +587,6 @@ def readProperties():
 def runSQLQuery(sqlCommand, user, out = PIPE):
     password = globals()['UserPassDict'][user]
     connectString = user+'/'+password+"@"+globals()['PROPS']['TargetServer']+'/'+globals()['PROPS']['Service']
-    # print(connectString)
-    #session = Popen(['sqlplus', '-S', connectString], stdin=PIPE, stdout=PIPE, stderr=PIPE)
     session = Popen(['sqlplus', '-S', connectString], stdin=PIPE, stdout=out)
     session.stdin.write(sqlCommand)
     return session.communicate()
@@ -467,14 +601,8 @@ class VersionCheckerScreen(QWidget):
     
     def design(self):
         vtable = ComponentTable(self)
-        # tableWidth = 400
-        # vtable.move(0, 20)
-        # vtable.resize(tableWidth, 40*len(globals()['COMPONENTS']))
         vtable.setRowCount(len(globals()['COMPONENTS']))
         vtable.setColumnCount(3)
-        # vtable.setColumnWidth(0, tableWidth/3 - 6)
-        # vtable.setColumnWidth(1, tableWidth/3 - 6)
-        # vtable.setColumnWidth(2, tableWidth/3 - 6)
         vtable.setHorizontalHeaderLabels("Component;Current Version;Target Version;".split(";"))
 
         curRow = 0
@@ -484,16 +612,24 @@ class VersionCheckerScreen(QWidget):
             vtable.setItem(curRow,2, QTableWidgetItem(globals()['TARGET_VERSION']))
             curRow += 1
 
-        self.btn = QPushButton("Start Migration Procedure", self)
-        # self.btn.move(20,self.height() - 20)
+        self.buttonBar = QWidget(self)
+        self.buttonBarLayout = QHBoxLayout(self.buttonBar)
+        self.btn = QPushButton("Start Migration Procedure", self.buttonBar)
+        self.buttonBarLayout.addWidget(self.btn)
         self.btn.clicked.connect(migrate)
+
+        self.resbtn = QPushButton("Resume Migration", self.buttonBar)
+        self.buttonBarLayout.addWidget(self.resbtn)
+        self.resbtn.clicked.connect(resume)
+
         self.arch.addWidget(vtable)
-        self.arch.addWidget(self.btn)
+        self.arch.addWidget(self.buttonBar)
 class Window(QMainWindow):
     def __init__(self):     
         QMainWindow.__init__(self)
         init()
         self.setGeometry(50, 50, 1280, 720)
+        self.showMaximized()
         self.setWindowTitle("Upgrade Manager")
         self.setWindowIcon(QIcon('icon.png'))
         self.design()
@@ -501,6 +637,7 @@ class Window(QMainWindow):
         sys.stdout.textWritten.connect(self.normalOutputWritten)
         self.load()
         self.show()
+        
         globals()['MAIN_WINDOW'] = self
     def __del__(self):
         # Restore sys.stdout
@@ -513,6 +650,7 @@ class Window(QMainWindow):
         viewMenu = mainMenu.addMenu('&View')
         premgrMenu = mainMenu.addMenu('&Pre-Migration')
         postmgrMenu = mainMenu.addMenu('&Post-Migration')
+        helpMenu = mainMenu.addMenu('&Help')
         loadPropAction= QAction("&Load Property File", self)
         loadPropAction.setShortcut("Ctrl+L")
         loadPropAction.setStatusTip('Load upgrade.properties')
@@ -523,7 +661,13 @@ class Window(QMainWindow):
         fileMenu.addAction(loadPropAction)
         fileMenu.addAction(exitAction)
         rowCounts = premgrMenu.addMenu('&Row Counts')
-        globals()['RowCMenu'] = rowCounts
+        invalidobjCounts = premgrMenu.addMenu('&Invalid Object Counts')
+        rowCountsPost = postmgrMenu.addMenu('&Row Counts')
+        invalidobjCountsPost = postmgrMenu.addMenu('&Invalid Object Counts')
+        globals()['RowCMenuPREMGR'] = rowCounts
+        globals()['RowCMenuPOSTMGR'] = rowCountsPost
+        globals()['InvalidCMenuPREMGR'] = invalidobjCounts
+        globals()['InvalidCMenuPOSTMGR'] = invalidobjCountsPost
         viewProgressAction= QAction("&Progress", self)
         viewProgressAction.triggered.connect(self.viewProgress)
         viewMenu.addAction(viewProgressAction)
@@ -532,9 +676,6 @@ class Window(QMainWindow):
         self.setCentralWidget(contentScreen)
 
         self.primaryLayout = QHBoxLayout(contentScreen)
-        #contentScreen.setLayout(self.primaryLayout)
-
-
         
         self.leftSide = QWidget()
         self.leftLayout = QVBoxLayout(self.leftSide)
@@ -582,23 +723,13 @@ class Window(QMainWindow):
 
     def con_success(self):
         queryComponents()
-        # globals()['VSCHKINST'] = VersionCheckerWindow()
-        if('vschkscr' not in globals()):
-            globals()['vschkscr'] = VersionCheckerScreen(self.actionScreen)
-            self.actionScreen.layout.addWidget(globals()['vschkscr'])
-            self.connectionScreen.hide()
-            self.rightSide.currentWidget.hide()
-            #self.rightSide.testLbl.show()
-            self.rightSide.progress.show()
-            self.rightSide.currentWidget = self.rightSide.progress
-            prepareTasks()
-        # self.vschkscr.move(100, 100)
-        #self.hide()
-
-    def execute(self):
-        execute()
-
-
+        globals()['vschkscr'] = VersionCheckerScreen(self.actionScreen)
+        self.actionScreen.layout.addWidget(globals()['vschkscr'])
+        self.connectionScreen.hide()
+        self.rightSide.currentWidget.hide()
+        self.rightSide.progress.show()
+        self.rightSide.currentWidget = self.rightSide.progress
+        prepareTasks()
 
     def load(self):
         self.readProperties()
@@ -606,14 +737,6 @@ class Window(QMainWindow):
     @pyqtSlot(str)
     def normalOutputWritten(self, text):
         """Append text to the QTextEdit."""
-        #sys.__stdout__.write(text)
-        #Maybe QTextEdit.append() works as well, but this is how I do it:
-        # cursor = self.ConTextField.textCursor()
-        # cursor.movePosition(cursor.End)
-        # cursor.insertText(text)
-        # #self.ConTextField.setTextCursor(cursor)
-        # self.ConTextField.ensureCursorVisible()
-
         self.ConTextField.moveCursor(QTextCursor.End)
         self.ConTextField.insertPlainText( text )
         QApplication.processEvents()
