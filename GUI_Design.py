@@ -7,7 +7,26 @@ class ActionScreen(QWidget):
         QWidget.__init__(self, parent)
         self.layout = QVBoxLayout(self)
     def sizeHint(self):
+        pass
         return QSize(400,300)
+
+class ErrorTE(QTextEdit):
+    def __init__(self, parent = None):
+        QTextEdit.__init__(self, parent)
+        pal = QPalette()
+        bgc = QColor(22, 54, 102)
+        pal.setColor(QPalette.Base, bgc)
+        textc = QColor(255, 255, 255)
+        pal.setColor(QPalette.Text, textc)
+        self.setPalette(pal)
+        self.setReadOnly(True)
+        font_db = QFontDatabase()
+        font_id = font_db.addApplicationFont("fonts/UbuntuMono-R.ttf")
+        families = font_db.applicationFontFamilies(font_id)[0]
+        font = QFont(families, 10)
+        self.setFont(font)
+        self.append("Error Console:")
+        self.append("")
 
 class QCenteredLabel(QLabel):
     def __init__(self, *args, **kwargs):
@@ -163,14 +182,37 @@ class TableViewScreen(QTableWidget):
         for c_i in range(self.cols):
             self.setColumnWidth(c_i, event.size().width()/self.cols)
 
+class FULLProgressBar(QProgressBar):
+    def __init__(self, parent = None):
+        QProgressBar.__init__(self, parent)
+        self.thisLayout = QHBoxLayout(self)
+        self.middleLabel = QCenteredLabel(self)
+        self.thisLayout.addWidget(self.middleLabel)        
+        self.thisLayout.setContentsMargins(0, 0, 0, 0)
+        self.completed = 0
+        self.maxTasks = 0
+    def updateCompleted(self, n):
+        self.completed = n
+        self.updateStatus()
+    def updateStatus(self):
+        percent = None
+        if self.maxTasks == 0:
+            percent = 0
+        else:
+            percent = int(100*(self.completed/self.maxTasks))
+        self.setValue(percent)
+        self.middleLabel.setText("Completed Tasks %d of %d"%(self.completed, self.maxTasks))
+    def setMaxTasks(self, n):
+        self.maxTasks = n
+        self.updateStatus()
 class ProgressScreen(QWidget):
     def __init__(self,parent=None):
         QWidget.__init__(self)
-        self.layout = QHBoxLayout(self)
+        self.layout = HBOXNOMG(self)
 
         self.sno = QWidget()
         self.layout.addWidget(self.sno)
-        self.snoLayout = QVBoxLayout(self.sno)
+        self.snoLayout = VBOXNOEXMG(self.sno)
         self.snoLayout.setAlignment(Qt.AlignTop)
         self.layout.addWidget(QVLine())
         self.snoHeading = QCenteredLabel("S. No.")
@@ -180,7 +222,7 @@ class ProgressScreen(QWidget):
 
         self.phaseSide = QWidget()
         self.layout.addWidget(self.phaseSide)
-        self.phaseLayout = QVBoxLayout(self.phaseSide)
+        self.phaseLayout = VBOXNOEXMG(self.phaseSide)
         self.phaseLayout.setAlignment(Qt.AlignTop)
         self.layout.addWidget(QVLine())
         self.phaseHeading = QCenteredLabel("Phase")
@@ -191,7 +233,7 @@ class ProgressScreen(QWidget):
 
         self.leftSide = QWidget()
         self.layout.addWidget(self.leftSide)
-        self.leftLayout = QVBoxLayout(self.leftSide)
+        self.leftLayout = VBOXNOEXMG(self.leftSide)
         self.leftLayout.setAlignment(Qt.AlignTop)
         self.layout.addWidget(QVLine())
         self.leftHeading = QCenteredLabel("Task Type")
@@ -201,7 +243,7 @@ class ProgressScreen(QWidget):
 
         self.middleSide = QWidget()
         self.layout.addWidget(self.middleSide)
-        self.middleLayout = QVBoxLayout(self.middleSide)
+        self.middleLayout = VBOXNOEXMG(self.middleSide)
         self.middleLayout.setAlignment(Qt.AlignTop)
         self.middleHeading = QCenteredLabel("Action")
         self.middleLayout.addWidget(self.middleHeading)
@@ -210,7 +252,7 @@ class ProgressScreen(QWidget):
 
         self.layout.addWidget(QVLine())
         self.rightSide = QWidget()
-        self.rightLayout = QVBoxLayout(self.rightSide)
+        self.rightLayout = VBOXNOEXMG(self.rightSide)
         self.rightLayout.setAlignment(Qt.AlignTop)
         self.layout.addWidget(self.rightSide)
         self.leftList = []
@@ -222,14 +264,6 @@ class ProgressScreen(QWidget):
         self.rightLayout.addWidget(QHLine())
         
         self.setStyleSheet('#HeadingMiddle, #HeadingLeft, #HeadingRight, #Headingsno, #Headingphase { font-weight: bold; } QLabel { color: white; }')
-
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.leftLayout.setContentsMargins(0, 0, 0, 0)
-        self.middleLayout.setContentsMargins(0, 0, 0, 0)
-        self.rightLayout.setContentsMargins(0, 0, 0, 0)
-        self.snoLayout.setContentsMargins(0, 0, 0, 0)
-        self.phaseLayout.setContentsMargins(0, 0, 0, 0)
-
 class QVLine(QFrame):
     def __init__(self, parent=None):
         QFrame.__init__(self, parent)
@@ -241,3 +275,32 @@ class QHLine(QFrame):
         QFrame.__init__(self, parent)
         self.setFrameShape(QFrame.HLine)
         self.setFrameShadow(QFrame.Sunken)
+
+class TaskMonitor(QWidget):
+    def __init__(self, parent= None):
+        QWidget.__init__(self, parent)
+        self.hide()
+        self.thisLayout = VBOXNOEXMG(self)
+        self.thisLayout.setAlignment(Qt.AlignTop)
+        self.errorBox = ErrorTE(self)
+        self.thisLayout.addWidget(self.errorBox)
+
+class VBOXNOEXMG(QVBoxLayout):
+    def __init__(self, parent= None):
+        QVBoxLayout.__init__(self, parent)
+        defMG = self.getContentsMargins()
+        self.setContentsMargins(0, defMG[1], 0, defMG[3])
+class HBOXNOEXMG(QHBoxLayout):
+    def __init__(self, parent= None):
+        QHBoxLayout.__init__(self, parent)
+        defMG = self.getContentsMargins()
+        self.setContentsMargins(defMG[0], 0, defMG[2], 0)
+
+class VBOXNOMG(QVBoxLayout):
+    def __init__(self, parent= None):
+        QVBoxLayout.__init__(self, parent)
+        self.setContentsMargins(0, 0, 0, 0)
+class HBOXNOMG(QHBoxLayout):
+    def __init__(self, parent= None):
+        QHBoxLayout.__init__(self, parent)
+        self.setContentsMargins(0, 0, 0, 0)

@@ -244,12 +244,21 @@ def updateTable(phase, type, schema):
 def updater(task):
     if task.labels:
         imgLbl = globals()['DISP_SCREEN'].progress.rightList[task.localid]
-        if task.status == 1:       
+        if task.status == 0:       
             pixmap = QPixmap('images/amber.png')
-        elif task.status == 2:
+        elif task.status == 2 or task.status == 5:
             pixmap = QPixmap('images/green.png')
+            globals()['CONTROLLER'].pbar.updateCompleted(task.localid + 1)
+        elif task.status == 4:
+            pixmap = QPixmap('images/red.png')
         imgLbl.setPixmap(pixmap)
-        
+
+    if task.status == 4:
+        globals()['CONTROLLER'].resbtn.setDisabled(False)
+        globals()['CONTROLLER'].ignbtn.setDisabled(False)
+        globals()['CONTROLLER'].taskMonitor.errorBox.append("Errors Encountered While Performing Task #%d"%(task.localid+1))
+        globals()['CONTROLLER'].taskMonitor.errorBox.append("")
+
     if task.op == 100:
         if task.status == 2:
             readRows(task.phase)
@@ -281,6 +290,7 @@ def updater(task):
             # for act_i in range(len(actions)):
             #     rowcmenu.addAction(actions[act_i])
             #     actions[act_i].triggered.connect(lambda f, i = act_i: updateTable(globals()['COMPONENTS'][i]))
+    globals()['LAST_TASK'] = task
 class Task():
     lblcntr = 0
     def __init__(self, op, schema = None, labels = False, TaskType = "Accessory Task", Action = "None", phase = "None"):
@@ -292,6 +302,7 @@ class Task():
         self.phase = phase
         self.TaskType = TaskType
         self.Action = Action
+        self.outputStatus = ""
         if self.labels:
             self.localid = Task.lblcntr
             dispLbl = QCenteredLabel(str(self.localid + 1))
@@ -325,6 +336,7 @@ class Task():
             globals()['DISP_SCREEN'].progress.rightLayout.addWidget(QHLine())
             Task.lblcntr += 1
     def runtask(self):        
+        self.status = 1
         if self.op == 1:
             os.chdir(globals()['ARCHIVEFOLDER'])
             os.chdir(self.phase)
@@ -404,6 +416,8 @@ class Task():
         elif self.op == 107:
             sqlcommand = bytes('@sqls/custompremgr', 'utf-8')
             runSQLQuery(sqlcommand, 'JDA_SYSTEM', sys.__stdout__)
+        elif self.op == 202:
+            self.status = 4
 class UpdateSignal(QObject):
     updateTask = pyqtSignal(Task)
 
@@ -415,19 +429,25 @@ class prThread(threading.Thread):
         q = globals()['TQueue']
         sig = globals()['UpdateSignal'].updateTask
         while q:
-            task = q[0]
+            task = q.popleft()
             sleep(0.5)
             print("Running Task",task.TaskType,task.schema)
             sleep(0.5)
-            task.status = 1
             sig.emit(task)
             sleep(1)
             task.runtask()
-            task.status = 2
+            if task.status == 1:
+                task.status = 2
             sig.emit(task)
 
-
-            q.popleft()
+            if task.status == 4:
+                globals()['ERREVENT'].clear()
+                globals()['ERREVENT'].wait()
+                if task.status == 5:
+                    sig.emit(task)
+                else:
+                    task.status = 0
+                    q.appendleft(task)
         sleep(0.5)
         print("Migration Procedure Completed")
         sleep(0.5)
@@ -450,6 +470,10 @@ def init():
     globals()['LogPipe'] = LogPipe()
     globals()['ABPP_CREATED'] = False
     createLogFolders()
+    
+    errorEvent = threading.Event()
+    globals()['ERREVENT'] = errorEvent
+
 
 def prepareTasks():
     q = globals()['TQueue']
@@ -499,13 +523,24 @@ def prepareTasks():
 
 def migrate():
     print("Creating and Starting Task Processor Thread") 
-    globals()['vschkscr'].btn.setDisabled(True)
+    controller = globals()['CONTROLLER']
+    controller.btn.setDisabled(True)
+    controller.vtable.hide()
+    controller.taskMonitor.show()
     th = prThread()
     th.start()
 
+def disableTaskControls():
+    globals()['CONTROLLER'].resbtn.setDisabled(True)
+    globals()['CONTROLLER'].ignbtn.setDisabled(True)
 def resume():
-    pass
+    disableTaskControls()
+    globals()['ERREVENT'].set()
 
+def ignore():
+    disableTaskControls()
+    globals()['LAST_TASK'].status = 5
+    globals()['ERREVENT'].set()
 
 def queryComponents():
     dbpath = globals()['PROPS']['TargetServer'] + ":" + globals()['PROPS']['Port'] + "/" + globals()['PROPS']['Service']
@@ -592,15 +627,15 @@ def runSQLQuery(sqlCommand, user, out = PIPE):
     return session.communicate()
 
 
-class VersionCheckerScreen(QWidget):
+class ControllerScreen(QWidget):
     def __init__(self, parent = None):     
         QWidget.__init__(self, parent)
         self.arch = QVBoxLayout(self)
-        # self.setGeometry(50, 50, 400, 40*len(globals()['COMPONENTS']) + 60)
         self.design()
     
     def design(self):
         vtable = ComponentTable(self)
+        self.vtable = vtable
         vtable.setRowCount(len(globals()['COMPONENTS']))
         vtable.setColumnCount(3)
         vtable.setHorizontalHeaderLabels("Component;Current Version;Target Version;".split(";"))
@@ -613,17 +648,35 @@ class VersionCheckerScreen(QWidget):
             curRow += 1
 
         self.buttonBar = QWidget(self)
-        self.buttonBarLayout = QHBoxLayout(self.buttonBar)
+        self.buttonBarLayout = HBOXNOMG(self.buttonBar)
         self.btn = QPushButton("Start Migration Procedure", self.buttonBar)
         self.buttonBarLayout.addWidget(self.btn)
         self.btn.clicked.connect(migrate)
 
         self.resbtn = QPushButton("Resume Migration", self.buttonBar)
         self.buttonBarLayout.addWidget(self.resbtn)
+        self.ignbtn = QPushButton("Ignore Errors and Resume", self.buttonBar)
+        self.buttonBarLayout.addWidget(self.ignbtn)
+        self.resbtn.setDisabled(True)
+        self.ignbtn.setDisabled(True)
         self.resbtn.clicked.connect(resume)
+        self.ignbtn.clicked.connect(ignore)
 
-        self.arch.addWidget(vtable)
+        self.semiController = QWidget(self)
+        self.semiCLayout = VBOXNOEXMG(self.semiController)
+        self.semiCLayout.addWidget(vtable)
+
+        self.taskMonitor = TaskMonitor(self) 
+        self.semiCLayout.addWidget(self.taskMonitor)
+
+
+        self.semiController.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.pbar = FULLProgressBar(self)
+        self.pbar.setMaxTasks(Task.lblcntr)
+        self.arch.addWidget(self.pbar)
+        self.arch.addWidget(self.semiController)
         self.arch.addWidget(self.buttonBar)
+        
 class Window(QMainWindow):
     def __init__(self):     
         QMainWindow.__init__(self)
@@ -648,6 +701,7 @@ class Window(QMainWindow):
         mainMenu = self.menuBar()
         fileMenu = mainMenu.addMenu('&File')
         viewMenu = mainMenu.addMenu('&View')
+        optionsMenu = mainMenu.addMenu('&Options')
         premgrMenu = mainMenu.addMenu('&Pre-Migration')
         postmgrMenu = mainMenu.addMenu('&Post-Migration')
         helpMenu = mainMenu.addMenu('&Help')
@@ -721,15 +775,16 @@ class Window(QMainWindow):
             msg.setDetailedText(status[2])
         msg.exec_()
 
+
     def con_success(self):
         queryComponents()
-        globals()['vschkscr'] = VersionCheckerScreen(self.actionScreen)
-        self.actionScreen.layout.addWidget(globals()['vschkscr'])
+        prepareTasks()
+        globals()['CONTROLLER'] = ControllerScreen(self.actionScreen)
+        self.actionScreen.layout.addWidget(globals()['CONTROLLER'])
         self.connectionScreen.hide()
         self.rightSide.currentWidget.hide()
         self.rightSide.progress.show()
         self.rightSide.currentWidget = self.rightSide.progress
-        prepareTasks()
 
     def load(self):
         self.readProperties()
