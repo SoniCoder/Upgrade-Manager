@@ -1,0 +1,5 @@
+StatGathering Stat Gathering on all components
+RowCounting Row Counting for all components
+InvObjCounting Invalid Object Counting for all components
+CustomScript Custom Premigration Script 
+ManugisticsInstallation Manugistics Installation in JDA_SYSTEM
