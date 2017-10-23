@@ -4,6 +4,11 @@ import os
 
 ARCHIVEFOLDER = None
 
+RowCountDictPREMGR = {}
+RowCountDictPOSTMGR = {}
+InvalidCountDictPREMGR = {}
+InvalidCountDictPOSTMGR = {}
+
 class saveDir():
     def __init__(self):
         self.svdir = os.getcwd()

@@ -7,3 +7,11 @@ def runSQLQuery(sqlCommand, user, out = PIPE):
     session = Popen(['sqlplus', '-S', connectString], stdin=PIPE, stdout=out)
     session.stdin.write(sqlCommand)
     return session.communicate()
+
+def RUNSQLQUERY(sqlCommand, user, out):
+    sqlCommand = bytes(sqlCommand, 'utf-8')
+    runSQLQuery(sqlCommand, user, out)
+
+FUNCTIONS = {
+    "RUNSQLQUERY": lambda sqlCommand, user, out : RUNSQLQUERY(sqlCommand, user, out)
+}

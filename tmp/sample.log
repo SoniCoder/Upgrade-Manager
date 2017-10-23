@@ -2289,38 +2289,6 @@ Creating role manu_emamgr
 Granting permission on application schema objects...
 GRANT EXECUTE ON WWFMGR.sre_nodecontrol TO emamgr
                         *
-ERROR at line 1:
-ORA-04042: procedure, function, package, or package body does not exist
-
-
-GRANT EXECUTE ON WWFMGR.sre_configuration TO emamgr
-                        *
-ERROR at line 1:
-ORA-04042: procedure, function, package, or package body does not exist
-
-
-GRANT SELECT, INSERT, UPDATE, DELETE ON WWFMGR.CLUSTER_DATA TO emamgr
-                                               *
-ERROR at line 1:
-ORA-00942: table or view does not exist
-
-
-GRANT SELECT, INSERT, UPDATE, DELETE ON WWFMGR.CLUSTER_GROUP TO emamgr
-                                               *
-ERROR at line 1:
-ORA-00942: table or view does not exist
-
-
-GRANT SELECT, INSERT, UPDATE, DELETE ON WWFMGR.CLUSTER_GROUP_MAP TO emamgr
-                                               *
-ERROR at line 1:
-ORA-00942: table or view does not exist
-
-
-GRANT SELECT, INSERT, UPDATE, DELETE ON WWFMGR.CLUSTER_TYPE TO emamgr
-                                               *
-ERROR at line 1:
-ORA-00942: table or view does not exist
 
 
 Disconnected from Oracle Database 12c Standard Edition Release 12.1.0.2.0 - 64bit Production

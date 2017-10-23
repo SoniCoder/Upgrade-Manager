@@ -1,2 +1,1 @@
-ON ALLSCHEMAS
-RUNSQLQUERY~{JDA_HOME}\config\database\scpoweb\gather_db_stats <SCHEMA>~{{System_Username}} {LogPipe}
+RUNSQLQUERY~@{JDA_HOME}\config\database\scpoweb\gather_db_stats <SCHEMA>~{System_Username}~[LogPipe]

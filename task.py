@@ -11,6 +11,7 @@ import sys
 class Task():
     lblcntr = 0
     def __init__(self, op, schema = None, labels = False, TaskType = "Accessory Task", Action = "None", phase = "None"):
+        self.func = None
         self.schema = schema
         self.op = op
         self.status = 0
@@ -122,6 +123,24 @@ class Task():
             for f in BACKUPFILES:
                 copy(scriptFolder+f, self.schema)
             os.chdir(globs.PROGDIR)
+        elif self.op == 10:
+            phase = "PREMGR"
+            predct = getattr(globs,'RowCountDict'+phase)
+            phase = "POSTMGR"
+            postdct = getattr(globs,'RowCountDict'+phase)
+            res = (predct == postdct)
+            if not res:
+                globs.SignalObj.updateErrorSignal.emit("Row Count Matching Failed!")
+                self.status = 4
+        elif self.op == 11:
+            phase = "PREMGR"
+            predct = getattr(globs,'InvalidCountDict'+phase)
+            phase = "POSTMGR"
+            postdct = getattr(globs,'InvalidCountDict'+phase)
+            res = (predct == postdct)
+            if not res:
+                globs.SignalObj.updateErrorSignal.emit("Invalid Object Count Matching Failed!")
+                self.status = 4
         elif self.op == 103:
             user = globs.props['JDA_SYSTEM_Username']
             print("Creating the ManugisticsPkg table in the JDA System schema")
@@ -153,10 +172,15 @@ class Task():
             if errFound:
                 self.status = 4
 
-def parseTask(taskfile, phase):
+def createTask(q, taskfile, phase, SCHEMA):
     tfile = open(taskfile)
+    fline = tfile.readline()
+    
 
-    pass
+
+
+    # while True:
+    #     pass
 
 def parseTaskList(q):
     d = globs.saveDir()
@@ -165,10 +189,15 @@ def parseTaskList(q):
     while True:
         taskline = tasklist.readline()
         if taskline == '': break
-        tlinesp = taskline.split(maxsplit = 2)
+        tlinesp = taskline.split()
         taskfile = tlinesp[0]
         phase = tlinesp[1]
-        # desc = tlinesp[2]
-        parseTask(taskfile, phase)
+        SCHEMA = tlinesp[2]
+        if SCHEMA == "ALLSCHEMAS":
+            for comp_i in range(len(globs.COMPONENTS)):
+                SCHEMA = globs.COMPONENTS[comp_i]
+                createTask(q, taskfile, phase, SCHEMA)
+        else:
+            createTask(q, taskfile, phase, SCHEMA)
 
     d.restore()

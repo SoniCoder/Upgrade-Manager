@@ -183,8 +183,7 @@ class LogPipe(threading.Thread):
 
 
 def readInvalidObjects(phase):
-    globals()['InvalidCountDict'+phase] = {}
-    dct = globals()['InvalidCountDict'+phase]
+    dct = getattr(globs,'InvalidCountDict'+phase)
     os.chdir(globs.ARCHIVEFOLDER)
     os.chdir(phase)
     for comp_i in range(len(globs.COMPONENTS)):
@@ -209,8 +208,7 @@ def readInvalidObjects(phase):
     os.chdir(globs.PROGDIR)
 
 def readRows(phase):
-    globals()['RowCountDict'+phase] = {}
-    dct = globals()['RowCountDict'+phase]
+    dct = getattr(globs,'RowCountDict'+phase)
     os.chdir(globs.ARCHIVEFOLDER)
     os.chdir(phase)
     for comp_i in range(len(globs.COMPONENTS)):
@@ -234,14 +232,14 @@ def readRows(phase):
 def updateTable(phase, type, schema):
     print("Updating Table for schema %s"%schema)
     if type == "ROW":
-        dct = globals()['RowCountDict'+phase]
+        dct = getattr(globs,'RowCountDict'+phase)
         lst = dct[schema]
         globs.DISP_SCREEN.tview.setData(lst, "Table Name in schema %s; Row Count"%schema)
         globs.DISP_SCREEN.currentWidget.hide()
         globs.DISP_SCREEN.tview.show()
         globs.DISP_SCREEN.currentWidget = globs.DISP_SCREEN.tview
     elif type == "INVALIDOBJ":
-        dct = globals()['InvalidCountDict'+phase]
+        dct = getattr(globs,'InvalidCountDict'+phase)
         lst = dct[schema]
         globs.DISP_SCREEN.tview.setData(lst, "Owner; Constraint_Name; Table_Name; Status")
         globs.DISP_SCREEN.currentWidget.hide()
@@ -261,7 +259,7 @@ def updater(task):
 
     if task.status == 4:
         globs.CONTROLLER.resbtn.setDisabled(False)
-        globs.CONTROLLER.ignbtn.setDisabled(False)
+        globs.CONTROLLER.fixbtn.setDisabled(False)
         globs.CONTROLLER.taskMonitor.errorBox.append("Errors Encountered While Performing Task #%d"%(task.localid+1))
         globs.CONTROLLER.taskMonitor.errorBox.append("")
 
@@ -449,11 +447,13 @@ class prThread(threading.Thread):
             if task.status == 4:
                 globs.ERREVENT.clear()
                 globs.ERREVENT.wait()
-                if task.status == 5:
-                    sig.emit(task)
-                else:
-                    task.status = 0
-                    q.appendleft(task)
+                task.status = 2
+                sig.emit(task)
+                # if task.status == 5:
+                #     sig.emit(task)
+                # else:
+                #     task.status = 0
+                #     q.appendleft(task)
         sleep(0.5)
         print("Migration Procedure Completed")
         sleep(0.5)
@@ -488,18 +488,18 @@ def init():
 
 def prepareTasks():
     q = globs.TQueue
-    # parseTaskList(globs.TQueue)
+    parseTaskList(globs.TQueue)
     # for comp_i in range(len(globs.COMPONENTS)):
     #     comp = globs.COMPONENTS[comp_i]
     #     q.append(Task(1,comp, True, 'Stat Gathering', "Gathering Stats on %s"%comp, "PREMGR"))
-    # for comp_i in range(len(globs.COMPONENTS)):
-    #     comp = globs.COMPONENTS[comp_i]
-    #     q.append(Task(2,comp, True, "Row Counting", "Counting Rows for %s"%comp, "PREMGR"))
-    # q.append(Task(100, phase ="PREMGR"))
-    # for comp_i in range(len(globs.COMPONENTS)):
-    #     comp = globs.COMPONENTS[comp_i]
-    #     q.append(Task(3,comp, True, "Invalid Object Counting", "Counting Invalid Objects for %s"%comp, "PREMGR"))
-    # q.append(Task(101, phase = "PREMGR"))
+    for comp_i in range(len(globs.COMPONENTS)):
+        comp = globs.COMPONENTS[comp_i]
+        q.append(Task(2,comp, True, "Row Counting", "Counting Rows for %s"%comp, "PREMGR"))
+    q.append(Task(100, phase ="PREMGR"))
+    for comp_i in range(len(globs.COMPONENTS)):
+        comp = globs.COMPONENTS[comp_i]
+        q.append(Task(3,comp, True, "Invalid Object Counting", "Counting Invalid Objects for %s"%comp, "PREMGR"))
+    q.append(Task(101, phase = "PREMGR"))
 
     
     # q.append(Task(107, 'None', True, "Custom Script", "Running Custom Pre-Migration Script", "PREMGR"))
@@ -517,20 +517,28 @@ def prepareTasks():
     # q.append(Task(6,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "PREMGR"))
     # q.append(Task(7,comp, True, 'Migration', "Migrating %s"%comp, "MGR"))
 
+    # comp = globs.props['SCPO_Username']
+    # q.append(Task(8,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "PREMGR"))
+    # q.append(Task(9,comp, True, 'Migration', "Migrating %s"%comp, "MGR"))
+
     # for comp_i in range(len(globs.COMPONENTS)):
     #     comp = globs.COMPONENTS[comp_i]
     #     q.append(Task(1,comp, True, 'Stat Gathering', "Gathering Stats on %s"%comp, "POSTMGR"))
-    # for comp_i in range(len(globs.COMPONENTS)):
-    #     comp = globs.COMPONENTS[comp_i]
-    #     q.append(Task(2,comp, True, "Row Counting", "Counting Rows for %s"%comp, "POSTMGR"))
-    # q.append(Task(100, phase = "POSTMGR"))
-    # for comp_i in range(len(globs.COMPONENTS)):
-    #     comp = globs.COMPONENTS[comp_i]
-    #     q.append(Task(3,comp, True, "Invalid Object Counting", "Counting Invalid Objects for %s"%comp, "POSTMGR"))
-    # q.append(Task(101, phase = "POSTMGR"))
+    for comp_i in range(len(globs.COMPONENTS)):
+        comp = globs.COMPONENTS[comp_i]
+        q.append(Task(2,comp, True, "Row Counting", "Counting Rows for %s"%comp, "POSTMGR"))
+    q.append(Task(100, phase = "POSTMGR"))
+    for comp_i in range(len(globs.COMPONENTS)):
+        comp = globs.COMPONENTS[comp_i]
+        q.append(Task(3,comp, True, "Invalid Object Counting", "Counting Invalid Objects for %s"%comp, "POSTMGR"))
+    q.append(Task(101, phase = "POSTMGR"))
 
-    for i in range(5):
-        q.append(Task(200+i,":P", True, 'Migration: '+ str(i), "HAHAHA"))    
+    q.append(Task(10,"ALLSCHEMAS", True, 'Validation', "Row Count Matching", "POSTMGR"))
+    q.append(Task(11,"ALLSCHEMAS", True, 'Validation', "Invalid Object Count Matching", "POSTMGR"))
+
+
+    # for i in range(5):
+    #     q.append(Task(200+i,":P", True, 'Migration: '+ str(i), "HAHAHA"))    
 
 
 def migrate():
@@ -544,15 +552,23 @@ def migrate():
 
 def disableTaskControls():
     globs.CONTROLLER.resbtn.setDisabled(True)
-    globs.CONTROLLER.ignbtn.setDisabled(True)
-def resume():
-    disableTaskControls()
-    globs.ERREVENT.set()
+    globs.CONTROLLER.fixbtn.setDisabled(True)
 
-def ignore():
-    disableTaskControls()
-    globs.LAST_TASK.status = 5
-    globs.ERREVENT.set()
+def resume():
+    if checkIfAllFixed():
+        disableTaskControls()
+        globs.ERREVENT.set()
+        globs.DISP_SCREEN.updateScreen(globs.DISP_SCREEN.progress)
+    else:
+        globs.CONTROLLER.taskMonitor.errorBox.append("WARNING! Fix All Errors Before Resuming")
+        globs.CONTROLLER.taskMonitor.errorBox.append("")
+def fixerr():
+    globs.DISP_SCREEN.currentWidget.hide()
+    globs.DISP_SCREEN.errorView.show()
+    globs.DISP_SCREEN.currentWidget = globs.DISP_SCREEN.errorView 
+    # disableTaskControls()
+    # globs.LAST_TASK.status = 5
+    # globs.ERREVENT.set()
 
 def queryComponents():
     dbpath = globs.props['TargetServer'] + ":" + globs.props['Port'] + "/" + globs.props['Service']
@@ -660,14 +676,14 @@ class ControllerScreen(QWidget):
         self.buttonBarLayout.addWidget(self.btn)
         self.btn.clicked.connect(migrate)
 
-        self.resbtn = QPushButton("Resume Migration", self.buttonBar)
+        self.resbtn = QPushButton("Resume Migration Safely", self.buttonBar)
         self.buttonBarLayout.addWidget(self.resbtn)
-        self.ignbtn = QPushButton("Ignore Errors and Resume", self.buttonBar)
-        self.buttonBarLayout.addWidget(self.ignbtn)
+        self.fixbtn = QPushButton("Fix Errors", self.buttonBar)
+        self.buttonBarLayout.addWidget(self.fixbtn)
         self.resbtn.setDisabled(True)
-        self.ignbtn.setDisabled(True)
+        self.fixbtn.setDisabled(True)
         self.resbtn.clicked.connect(resume)
-        self.ignbtn.clicked.connect(ignore)
+        self.fixbtn.clicked.connect(fixerr)
 
         self.semiController = QWidget(self)
         self.semiCLayout = VBOXNOEXMG(self.semiController)

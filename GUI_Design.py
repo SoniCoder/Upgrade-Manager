@@ -140,10 +140,38 @@ class DisplayScreen(QWidget):
         self.layout.addWidget(self.tview)
         self.tview.hide()
 
+        self.errorView = ErrorTableScreen(self)
+        self.layout.addWidget(self.errorView)
+        self.errorView.hide()
+
         self.currentWidget = self.imgLbl
 
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.outerlayout.setContentsMargins(0, 0, 0, 0)
+
+    def updateScreen(self,scr):
+        self.currentWidget.hide()
+        scr.show()
+        self.currentWidget = scr
+
+class ErrorTableScreen(QTableWidget):
+    def __init__(self,parent=None):
+        QTableWidget.__init__(self, parent)
+        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.setColumnCount(2)
+        header = "Mark Fixed;Error Description"
+        self.setHorizontalHeaderLabels(header.split(";"))
+        self.rowc = 0
+        self.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+        header = self.horizontalHeader()
+        header.setStretchLastSection(True)
+        
+    def addError(self, text):
+        self.rowc += 1
+        self.setRowCount(self.rowc)
+        self.setItem(self.rowc - 1, 1, QTableWidgetItem(text))
+        self.setCellWidget(self.rowc - 1, 0, QCenteredCheckBox())
+        self.resizeColumnsToContents()
 
 class JDALogoLabel(QLabel):
     def __init__(self, *args, **kwargs):

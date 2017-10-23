@@ -4,6 +4,7 @@ import re
 def dispErr(s):
     globs.CONTROLLER.taskMonitor.errorBox.append(s)
     globs.CONTROLLER.taskMonitor.errorBox.append("")
+    globs.DISP_SCREEN.errorView.addError(s)
 
 def find_errors(filepath, patterns):
     line_no = 0
@@ -26,3 +27,13 @@ def find_errors(filepath, patterns):
         return True
     return False     
 
+def checkIfAllFixed():
+    tb = globs.DISP_SCREEN.errorView
+    rows = tb.rowc
+    fixed = True
+    for i in range(rows):
+        chk = tb.cellWidget(i, 0).chkbox.isChecked()
+        if not chk:
+            fixed = False
+            break
+    return fixed

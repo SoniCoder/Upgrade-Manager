@@ -7,6 +7,13 @@ class QCenteredLabel(QLabel):
         QLabel.__init__(self, *args, **kwargs)
         self.setAlignment(Qt.AlignCenter)
 
+class QCenteredCheckBox(QWidget):
+    def __init__(self, *args, **kwargs):
+        QWidget.__init__(self, *args, **kwargs)
+        self.layout = HBOXNOMG(self)
+        self.chkbox = QCheckBox()
+        self.layout.addWidget(self.chkbox)
+        self.layout.setAlignment(Qt.AlignCenter)
 class QHLine(QFrame):
     def __init__(self, parent=None):
         QFrame.__init__(self, parent)
