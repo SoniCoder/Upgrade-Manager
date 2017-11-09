@@ -1,0 +1,2 @@
+count rows instead of row counting 
+and premgr etc full

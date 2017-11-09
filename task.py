@@ -123,6 +123,20 @@ class Task():
             for f in BACKUPFILES:
                 copy(scriptFolder+f, self.schema)
             os.chdir(globs.PROGDIR)
+        elif self.op == 8:
+            d = globs.saveDir()
+            scriptFolder = globs.props['JDA_HOME']+'\\config\\database\\scpoweb\\migration\\'
+            os.chdir(scriptFolder)
+            session = Popen(['premigrate_scpo.cmd', globs.props['SCPO_Password'], globs.props['WebWORKS_Password'], globs.props['System_Username'], globs.props['System_Password']], stdin=PIPE, stdout=sys.__stdout__)
+            session.communicate()
+            d.restore()
+        elif self.op == 9:
+            d = globs.saveDir()
+            scriptFolder = globs.props['JDA_HOME']+'\\config\\database\\scpoweb\\migration\\'
+            os.chdir(scriptFolder)
+            session = Popen(['migrate_scpo.cmd', globs.props['SCPO_Password'], globs.props['WebWORKS_Password'], globs.props['System_Username'], globs.props['System_Password']], stdin=PIPE, stdout=globs.LogPipe)
+            session.communicate()
+            d.restore()
         elif self.op == 10:
             phase = "PREMGR"
             predct = getattr(globs,'RowCountDict'+phase)

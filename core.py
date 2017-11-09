@@ -489,12 +489,12 @@ def init():
 def prepareTasks():
     q = globs.TQueue
     parseTaskList(globs.TQueue)
-    # for comp_i in range(len(globs.COMPONENTS)):
-    #     comp = globs.COMPONENTS[comp_i]
-    #     q.append(Task(1,comp, True, 'Stat Gathering', "Gathering Stats on %s"%comp, "PREMGR"))
     for comp_i in range(len(globs.COMPONENTS)):
         comp = globs.COMPONENTS[comp_i]
-        q.append(Task(2,comp, True, "Row Counting", "Counting Rows for %s"%comp, "PREMGR"))
+        q.append(Task(1,comp, True, 'Stat Gathering', "Gathering Stats on %s"%comp, "PREMGR"))
+    for comp_i in range(len(globs.COMPONENTS)):
+        comp = globs.COMPONENTS[comp_i]
+        q.append(Task(2,comp, True, "Count Rows", "Counting Rows for %s"%comp, "PREMGR"))
     q.append(Task(100, phase ="PREMGR"))
     for comp_i in range(len(globs.COMPONENTS)):
         comp = globs.COMPONENTS[comp_i]
@@ -502,31 +502,31 @@ def prepareTasks():
     q.append(Task(101, phase = "PREMGR"))
 
     
-    # q.append(Task(107, 'None', True, "Custom Script", "Running Custom Pre-Migration Script", "PREMGR"))
-    # q.append(Task(103, 'JDA_SYSTEM', True, "Manugistics Installation", "Manugistics Installation in JDA_SYSTEM", "PREMGR"))
-    # if globs.ABPP_CREATED:
-    #     q.append(Task(104, 'ABPPMGR', True, "Schema Creation", "Creating ABPPMGR Schema", "PREMGR"))
-    # else:
-    #     q.append(Task(105, 'ABPPMGR', True, "Grant Providing", "Providing Grants to ABPPMGR Schema", "PREMGR"))
-    #     q.append(Task(106, 'ABPPMGR', True, "Schema Update", "ABPPMGR Schema Update", "PREMGR"))
+    q.append(Task(107, 'None', True, "Custom Script", "Running Custom Pre-Migration Script", "PREMGR"))
+    q.append(Task(103, 'JDA_SYSTEM', True, "Manugistics Installation", "Manugistics Installation in JDA_SYSTEM", "PREMGR"))
+    if globs.ABPP_CREATED:
+        q.append(Task(104, 'ABPPMGR', True, "Schema Creation", "Creating ABPPMGR Schema", "PREMGR"))
+    else:
+        q.append(Task(105, 'ABPPMGR', True, "Grant Providing", "Providing Grants to ABPPMGR Schema", "PREMGR"))
+        q.append(Task(106, 'ABPPMGR', True, "Schema Update", "ABPPMGR Schema Update", "PREMGR"))
         
-    # comp = globs.props['WebWORKS_Username']
-    # q.append(Task(4,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "PREMGR"))
-    # q.append(Task(5,comp, True, 'Migration', "Migrating %s"%comp, "MGR"))
-    # comp = globs.props['Monitor_Username']
-    # q.append(Task(6,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "PREMGR"))
-    # q.append(Task(7,comp, True, 'Migration', "Migrating %s"%comp, "MGR"))
+    comp = globs.props['WebWORKS_Username']
+    q.append(Task(4,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "PREMGR"))
+    q.append(Task(5,comp, True, 'Migration', "Migrating %s"%comp, "MGR"))
+    comp = globs.props['Monitor_Username']
+    q.append(Task(6,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "PREMGR"))
+    q.append(Task(7,comp, True, 'Migration', "Migrating %s"%comp, "MGR"))
 
-    # comp = globs.props['SCPO_Username']
-    # q.append(Task(8,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "PREMGR"))
-    # q.append(Task(9,comp, True, 'Migration', "Migrating %s"%comp, "MGR"))
+    comp = globs.props['SCPO_Username']
+    q.append(Task(8,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "PREMGR"))
+    q.append(Task(9,comp, True, 'Migration', "Migrating %s"%comp, "MGR"))
 
-    # for comp_i in range(len(globs.COMPONENTS)):
-    #     comp = globs.COMPONENTS[comp_i]
-    #     q.append(Task(1,comp, True, 'Stat Gathering', "Gathering Stats on %s"%comp, "POSTMGR"))
     for comp_i in range(len(globs.COMPONENTS)):
         comp = globs.COMPONENTS[comp_i]
-        q.append(Task(2,comp, True, "Row Counting", "Counting Rows for %s"%comp, "POSTMGR"))
+        q.append(Task(1,comp, True, 'Stat Gathering', "Gathering Stats on %s"%comp, "POSTMGR"))
+    for comp_i in range(len(globs.COMPONENTS)):
+        comp = globs.COMPONENTS[comp_i]
+        q.append(Task(2,comp, True, "Count Rows", "Counting Rows for %s"%comp, "POSTMGR"))
     q.append(Task(100, phase = "POSTMGR"))
     for comp_i in range(len(globs.COMPONENTS)):
         comp = globs.COMPONENTS[comp_i]
@@ -537,8 +537,8 @@ def prepareTasks():
     q.append(Task(11,"ALLSCHEMAS", True, 'Validation', "Invalid Object Count Matching", "POSTMGR"))
 
 
-    # for i in range(5):
-    #     q.append(Task(200+i,":P", True, 'Migration: '+ str(i), "HAHAHA"))    
+    for i in range(5):
+        q.append(Task(200+i,":P", True, 'Migration: '+ str(i), "HAHAHA"))    
 
 
 def migrate():
@@ -587,11 +587,11 @@ def queryComponents():
     augComps.append(globs.props['ABPP_Username'].upper())
     augComps.append(globs.props['Monitor_Username'].upper())
 
-    comps.remove(globs.props['WebWORKS_Username'].upper())
-    comps.remove(globs.props['Monitor_Username'].upper())
-    comps.remove(globs.props['SCPO_Username'].upper())
+    # comps.remove(globs.props['WebWORKS_Username'].upper())
+    # comps.remove(globs.props['Monitor_Username'].upper())
+    # comps.remove(globs.props['SCPO_Username'].upper())
 
-    augComps += comps
+    # augComps += comps
 
     augComps.append(globs.props['SCPO_Username'].upper())
 
