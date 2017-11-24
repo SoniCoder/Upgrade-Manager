@@ -127,9 +127,9 @@ def createLogFolders():
         logFolder = '_'.join(split)
     os.mkdir(logFolder)
     os.chdir(logFolder)
-    os.mkdir("PREMGR")
-    os.mkdir("MGR")
-    os.mkdir("POSTMGR")
+    os.mkdir("Premigration")
+    os.mkdir("Migration")
+    os.mkdir("Postmigration")
     print("Storing All Logs in ARCHIVES/%s"%logFolder)
     globs.ARCHIVEFOLDER = os.getcwd()
     os.chdir(globs.PROGDIR)
@@ -371,7 +371,7 @@ def updater(task):
 #             session = Popen(['premigrate_webworks.cmd', globs.props['WebWORKS_Password'], globs.props['System_Username'], globs.props['System_Password']], stdin=PIPE, stdout=globs.LogPipe)
 #             session.communicate()
 #             os.chdir(globs.ARCHIVEFOLDER)
-#             os.chdir("PREMGR")
+#             os.chdir("Premigration")
 #             BACKUPFILES = ['premigrate.log', 'gen_refschema.log', 'platform_db_creation.log', 'refsch_check.log', 'r_query.log']
 #             for f in BACKUPFILES:
 #                 copy(scriptFolder+f, self.schema)
@@ -393,7 +393,7 @@ def updater(task):
 #             session = Popen(['premigrate_monitor.cmd', globs.props['Monitor_Password'], globs.props['WebWORKS_Password'], globs.props['System_Username'], globs.props['System_Password']], stdin=PIPE, stdout=globs.LogPipe)
 #             session.communicate()
 #             os.chdir(globs.ARCHIVEFOLDER)
-#             os.chdir("PREMGR")
+#             os.chdir("Premigration")
 #             BACKUPFILES = ['premigrate.log', 'platform_db_creation.log', 'gen_refschema.log', 'refsch_check.log']
 #             for f in BACKUPFILES:
 #                 copy(scriptFolder+f, self.schema)
@@ -418,7 +418,7 @@ def updater(task):
 #         elif self.op == 106:
 #             createABPPMGRUPDATE()
 #         elif self.op == 107:
-#             sqlcommand = bytes('@sqls/custompremgr', 'utf-8')
+#             sqlcommand = bytes('@sqls/customPremigration', 'utf-8')
 #             runSQLQuery(sqlcommand, 'JDA_SYSTEM', sys.__stdout__)
 #         elif self.op == 202:
 #             self.status = 4
@@ -491,50 +491,50 @@ def prepareTasks():
     parseTaskList(globs.TQueue)
     for comp_i in range(len(globs.COMPONENTS)):
         comp = globs.COMPONENTS[comp_i]
-        q.append(Task(1,comp, True, 'Stat Gathering', "Gathering Stats on %s"%comp, "PREMGR"))
+        q.append(Task(1,comp, True, 'Stat Gathering', "Gathering Stats on %s"%comp, "Premigration"))
     for comp_i in range(len(globs.COMPONENTS)):
         comp = globs.COMPONENTS[comp_i]
-        q.append(Task(2,comp, True, "Count Rows", "Counting Rows for %s"%comp, "PREMGR"))
-    q.append(Task(100, phase ="PREMGR"))
+        q.append(Task(2,comp, True, "Count Rows", "Counting Rows for %s"%comp, "Premigration"))
+    q.append(Task(100, phase ="Premigration"))
     for comp_i in range(len(globs.COMPONENTS)):
         comp = globs.COMPONENTS[comp_i]
-        q.append(Task(3,comp, True, "Invalid Object Counting", "Counting Invalid Objects for %s"%comp, "PREMGR"))
-    q.append(Task(101, phase = "PREMGR"))
+        q.append(Task(3,comp, True, "Invalid Object Counting", "Counting Invalid Objects for %s"%comp, "Premigration"))
+    q.append(Task(101, phase = "Premigration"))
 
     
-    q.append(Task(107, 'None', True, "Custom Script", "Running Custom Pre-Migration Script", "PREMGR"))
-    q.append(Task(103, 'JDA_SYSTEM', True, "Manugistics Installation", "Manugistics Installation in JDA_SYSTEM", "PREMGR"))
+    q.append(Task(107, 'None', True, "Custom Script", "Running Custom Pre-Migration Script", "Premigration"))
+    q.append(Task(103, 'JDA_SYSTEM', True, "Manugistics Installation", "Manugistics Installation in JDA_SYSTEM", "Premigration"))
     if globs.ABPP_CREATED:
-        q.append(Task(104, 'ABPPMGR', True, "Schema Creation", "Creating ABPPMGR Schema", "PREMGR"))
+        q.append(Task(104, 'ABPPMGR', True, "Schema Creation", "Creating ABPPMGR Schema", "Premigration"))
     else:
-        q.append(Task(105, 'ABPPMGR', True, "Grant Providing", "Providing Grants to ABPPMGR Schema", "PREMGR"))
-        q.append(Task(106, 'ABPPMGR', True, "Schema Update", "ABPPMGR Schema Update", "PREMGR"))
+        q.append(Task(105, 'ABPPMGR', True, "Grant Providing", "Providing Grants to ABPPMGR Schema", "Premigration"))
+        q.append(Task(106, 'ABPPMGR', True, "Schema Update", "ABPPMGR Schema Update", "Premigration"))
         
     comp = globs.props['WebWORKS_Username']
-    q.append(Task(4,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "PREMGR"))
-    q.append(Task(5,comp, True, 'Migration', "Migrating %s"%comp, "MGR"))
+    q.append(Task(4,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "Premigration"))
+    q.append(Task(5,comp, True, 'Migration', "Migrating %s"%comp, "Migration"))
     comp = globs.props['Monitor_Username']
-    q.append(Task(6,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "PREMGR"))
-    q.append(Task(7,comp, True, 'Migration', "Migrating %s"%comp, "MGR"))
+    q.append(Task(6,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "Premigration"))
+    q.append(Task(7,comp, True, 'Migration', "Migrating %s"%comp, "Migration"))
 
     comp = globs.props['SCPO_Username']
-    q.append(Task(8,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "PREMGR"))
-    q.append(Task(9,comp, True, 'Migration', "Migrating %s"%comp, "MGR"))
+    q.append(Task(8,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "Premigration"))
+    q.append(Task(9,comp, True, 'Migration', "Migrating %s"%comp, "Migration"))
 
     for comp_i in range(len(globs.COMPONENTS)):
         comp = globs.COMPONENTS[comp_i]
-        q.append(Task(1,comp, True, 'Stat Gathering', "Gathering Stats on %s"%comp, "POSTMGR"))
+        q.append(Task(1,comp, True, 'Stat Gathering', "Gathering Stats on %s"%comp, "Postmigration"))
     for comp_i in range(len(globs.COMPONENTS)):
         comp = globs.COMPONENTS[comp_i]
-        q.append(Task(2,comp, True, "Count Rows", "Counting Rows for %s"%comp, "POSTMGR"))
-    q.append(Task(100, phase = "POSTMGR"))
+        q.append(Task(2,comp, True, "Count Rows", "Counting Rows for %s"%comp, "Postmigration"))
+    q.append(Task(100, phase = "Postmigration"))
     for comp_i in range(len(globs.COMPONENTS)):
         comp = globs.COMPONENTS[comp_i]
-        q.append(Task(3,comp, True, "Invalid Object Counting", "Counting Invalid Objects for %s"%comp, "POSTMGR"))
-    q.append(Task(101, phase = "POSTMGR"))
+        q.append(Task(3,comp, True, "Invalid Object Counting", "Counting Invalid Objects for %s"%comp, "Postmigration"))
+    q.append(Task(101, phase = "Postmigration"))
 
-    q.append(Task(10,"ALLSCHEMAS", True, 'Validation', "Row Count Matching", "POSTMGR"))
-    q.append(Task(11,"ALLSCHEMAS", True, 'Validation', "Invalid Object Count Matching", "POSTMGR"))
+    q.append(Task(10,"ALLSCHEMAS", True, 'Validation', "Row Count Matching", "Postmigration"))
+    q.append(Task(11,"ALLSCHEMAS", True, 'Validation', "Invalid Object Count Matching", "Postmigration"))
 
 
     for i in range(5):
@@ -599,7 +599,7 @@ def queryComponents():
     globs.COMPONENTS = augComps
 
     for comp in augComps:
-        for dirs in ["PREMGR", "MGR", "POSTMGR"]:
+        for dirs in ["Premigration", "Migration", "Postmigration"]:
             os.chdir(globs.ARCHIVEFOLDER)
             os.chdir(dirs)
             os.mkdir(comp)
@@ -725,8 +725,8 @@ class Window(QMainWindow):
         fileMenu = mainMenu.addMenu('&File')
         viewMenu = mainMenu.addMenu('&View')
         optionsMenu = mainMenu.addMenu('&Options')
-        premgrMenu = mainMenu.addMenu('&Pre-Migration')
-        postmgrMenu = mainMenu.addMenu('&Post-Migration')
+        PremigrationMenu = mainMenu.addMenu('&Pre-Migration')
+        PostmigrationMenu = mainMenu.addMenu('&Post-Migration')
         helpMenu = mainMenu.addMenu('&Help')
         loadPropAction= QAction("&Load Property File", self)
         loadPropAction.setShortcut("Ctrl+L")
@@ -737,14 +737,14 @@ class Window(QMainWindow):
         exitAction.triggered.connect(self.close)
         fileMenu.addAction(loadPropAction)
         fileMenu.addAction(exitAction)
-        rowCounts = premgrMenu.addMenu('&Row Counts')
-        invalidobjCounts = premgrMenu.addMenu('&Invalid Object Counts')
-        rowCountsPost = postmgrMenu.addMenu('&Row Counts')
-        invalidobjCountsPost = postmgrMenu.addMenu('&Invalid Object Counts')
-        globs.RowCMenuPREMGR = rowCounts
-        globs.RowCMenuPOSTMGR = rowCountsPost
-        globs.InvalidCMenuPREMGR = invalidobjCounts
-        globs.InvalidCMenuPOSTMGR = invalidobjCountsPost
+        rowCounts = PremigrationMenu.addMenu('&Row Counts')
+        invalidobjCounts = PremigrationMenu.addMenu('&Invalid Object Counts')
+        rowCountsPost = PostmigrationMenu.addMenu('&Row Counts')
+        invalidobjCountsPost = PostmigrationMenu.addMenu('&Invalid Object Counts')
+        globs.RowCMenuPremigration = rowCounts
+        globs.RowCMenuPostmigration = rowCountsPost
+        globs.InvalidCMenuPremigration = invalidobjCounts
+        globs.InvalidCMenuPostmigration = invalidobjCountsPost
         viewProgressAction= QAction("&Progress", self)
         viewProgressAction.triggered.connect(self.viewProgress)
         viewMenu.addAction(viewProgressAction)

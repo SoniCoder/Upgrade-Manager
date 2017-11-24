@@ -4,10 +4,10 @@ import os
 
 ARCHIVEFOLDER = None
 
-RowCountDictPREMGR = {}
-RowCountDictPOSTMGR = {}
-InvalidCountDictPREMGR = {}
-InvalidCountDictPOSTMGR = {}
+RowCountDictPremigration = {}
+RowCountDictPostmigration = {}
+InvalidCountDictPremigration = {}
+InvalidCountDictPostmigration = {}
 
 class saveDir():
     def __init__(self):

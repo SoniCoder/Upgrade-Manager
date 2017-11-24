@@ -85,7 +85,7 @@ class Task():
             session = Popen(['premigrate_webworks.cmd', globs.props['WebWORKS_Password'], globs.props['System_Username'], globs.props['System_Password']], stdin=PIPE, stdout=globs.LogPipe)
             session.communicate()
             os.chdir(globs.ARCHIVEFOLDER)
-            os.chdir("PREMGR")
+            os.chdir("Premigration")
             BACKUPFILES = ['premigrate.log', 'gen_refschema.log', 'platform_db_creation.log', 'refsch_check.log', 'r_query.log']
             for f in BACKUPFILES:
                 copy(scriptFolder+f, self.schema)
@@ -96,7 +96,7 @@ class Task():
             session = Popen(['migrate_webworks.cmd', globs.props['WebWORKS_Password'], globs.props['System_Username'], globs.props['System_Password']], stdin=PIPE, stdout=globs.LogPipe)
             session.communicate()
             os.chdir(globs.ARCHIVEFOLDER)
-            os.chdir("MGR")
+            os.chdir("Migration")
             BACKUPFILES = ['migrate_webworks.log', 'platform_db_creation.log', 'gen_refschema.log']
             for f in BACKUPFILES:
                 copy(scriptFolder+f, self.schema)
@@ -107,7 +107,7 @@ class Task():
             session = Popen(['premigrate_monitor.cmd', globs.props['Monitor_Password'], globs.props['WebWORKS_Password'], globs.props['System_Username'], globs.props['System_Password']], stdin=PIPE, stdout=globs.LogPipe)
             session.communicate()
             os.chdir(globs.ARCHIVEFOLDER)
-            os.chdir("PREMGR")
+            os.chdir("Premigration")
             BACKUPFILES = ['premigrate.log', 'platform_db_creation.log', 'gen_refschema.log', 'refsch_check.log']
             for f in BACKUPFILES:
                 copy(scriptFolder+f, self.schema)
@@ -118,7 +118,7 @@ class Task():
             session = Popen(['migrate_monitor.cmd', globs.props['Monitor_Password'], globs.props['WebWORKS_Password'], globs.props['System_Username'], globs.props['System_Password']], stdin=PIPE, stdout=globs.LogPipe)
             session.communicate()
             os.chdir(globs.ARCHIVEFOLDER)
-            os.chdir("MGR")
+            os.chdir("Migration")
             BACKUPFILES = ['migrate_monitor.log', 'platform_db_creation.log', 'gen_refschema.log', 'ema_populate_wwf.log', 'enroll_app_schema.log']
             for f in BACKUPFILES:
                 copy(scriptFolder+f, self.schema)
@@ -138,18 +138,18 @@ class Task():
             session.communicate()
             d.restore()
         elif self.op == 10:
-            phase = "PREMGR"
+            phase = "Premigration"
             predct = getattr(globs,'RowCountDict'+phase)
-            phase = "POSTMGR"
+            phase = "Postmigration"
             postdct = getattr(globs,'RowCountDict'+phase)
             res = (predct == postdct)
             if not res:
                 globs.SignalObj.updateErrorSignal.emit("Row Count Matching Failed!")
                 self.status = 4
         elif self.op == 11:
-            phase = "PREMGR"
+            phase = "Premigration"
             predct = getattr(globs,'InvalidCountDict'+phase)
-            phase = "POSTMGR"
+            phase = "Postmigration"
             postdct = getattr(globs,'InvalidCountDict'+phase)
             res = (predct == postdct)
             if not res:
@@ -178,7 +178,7 @@ class Task():
             session.communicate()
             os.chdir(progPath)
         elif self.op == 107:
-            sqlcommand = bytes('@sqls/custompremgr', 'utf-8')
+            sqlcommand = bytes('@sqls/customPremigration', 'utf-8')
             runSQLQuery(sqlcommand, 'JDA_SYSTEM', sys.__stdout__)
         elif self.op == 202:
             log_file = globs.PROGDIR+'\\tmp\\sample.log'

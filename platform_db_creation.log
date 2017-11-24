@@ -4,3 +4,248 @@ User created.
 
 Grant succeeded.
 
+old   2:    IDENTIFIED BY &1
+new   2:    IDENTIFIED BY ABPPMGR
+CREATE USER ABPPMGR
+            *
+ERROR at line 1:
+ORA-01920: user name 'ABPPMGR' conflicts with another user or role name 
+
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+old   2:    IDENTIFIED BY &1
+new   2:    IDENTIFIED BY ABPPMGR
+CREATE USER ABPPMGR
+            *
+ERROR at line 1:
+ORA-01920: user name 'ABPPMGR' conflicts with another user or role name 
+
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+old   2:    IDENTIFIED BY &1
+new   2:    IDENTIFIED BY ABPPMGR
+CREATE USER ABPPMGR
+            *
+ERROR at line 1:
+ORA-01920: user name 'ABPPMGR' conflicts with another user or role name 
+
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+old   2:    IDENTIFIED BY &1
+new   2:    IDENTIFIED BY ABPPMGR
+CREATE USER ABPPMGR
+            *
+ERROR at line 1:
+ORA-01920: user name 'ABPPMGR' conflicts with another user or role name 
+
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+old   2:    IDENTIFIED BY &1
+new   2:    IDENTIFIED BY ABPPMGR
+CREATE USER ABPPMGR
+            *
+ERROR at line 1:
+ORA-01920: user name 'ABPPMGR' conflicts with another user or role name 
+
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+old   2:    IDENTIFIED BY &1
+new   2:    IDENTIFIED BY ABPPMGR
+CREATE USER ABPPMGR
+            *
+ERROR at line 1:
+ORA-01920: user name 'ABPPMGR' conflicts with another user or role name 
+
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+old   2:    IDENTIFIED BY &1
+new   2:    IDENTIFIED BY ABPPMGR
+CREATE USER ABPPMGR
+            *
+ERROR at line 1:
+ORA-01920: user name 'ABPPMGR' conflicts with another user or role name 
+
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
