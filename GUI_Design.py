@@ -157,7 +157,7 @@ class DisplayScreen(QWidget):
 class ErrorTableScreen(QTableWidget):
     def __init__(self,parent=None):
         QTableWidget.__init__(self, parent)
-        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        # self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.setColumnCount(2)
         header = "Mark Fixed;Error Description"
         self.setHorizontalHeaderLabels(header.split(";"))

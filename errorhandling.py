@@ -27,6 +27,8 @@ def find_errors(filepath, patterns):
         return True
     return False     
 
+
+
 def checkIfAllFixed():
     tb = globs.DISP_SCREEN.errorView
     rows = tb.rowc
@@ -37,3 +39,11 @@ def checkIfAllFixed():
             fixed = False
             break
     return fixed
+
+def selallerrors():
+    tb = globs.DISP_SCREEN.errorView
+    rows = tb.rowc
+    for i in range(rows):
+        chk = tb.cellWidget(i, 0).chkbox.setChecked(True)
+        
+    return

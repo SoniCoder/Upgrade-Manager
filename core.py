@@ -1,3 +1,11 @@
+"""
+AUTHOR: Hritik Soni
+
+Description: Contains Major Portions of Code for functioning of Interface
+
+
+"""
+
 import cx_Oracle
 import datetime
 import os
@@ -18,7 +26,7 @@ from time import sleep
 from errorhandling import *
 from GUI_Design import *
 from signals import *
-from task import Task, parseTaskList
+from task import Task, updater, prepareTasks 
 from config import *
 from commands import *
 
@@ -130,6 +138,7 @@ def createLogFolders():
     os.mkdir("Premigration")
     os.mkdir("Migration")
     os.mkdir("Postmigration")
+    os.mkdir("Other")
     print("Storing All Logs in ARCHIVES/%s"%logFolder)
     globs.ARCHIVEFOLDER = os.getcwd()
     os.chdir(globs.PROGDIR)
@@ -182,119 +191,9 @@ class LogPipe(threading.Thread):
         os.close(self.fdWrite)
 
 
-def readInvalidObjects(phase):
-    dct = getattr(globs,'InvalidCountDict'+phase)
-    os.chdir(globs.ARCHIVEFOLDER)
-    os.chdir(phase)
-    for comp_i in range(len(globs.COMPONENTS)):
-        comp = globs.COMPONENTS[comp_i]
-        os.chdir(comp)     
-        dct[comp] = []
-        lst = dct[comp]
-        fileName = "invalidObj(%s).txt"%comp
-        print("Opening File:",fileName)
-        f = open(fileName)
-        f.readline()
-        f.readline()
-        f.readline()
-        f.readline()
-        f.readline()
-        while True:
-            line = f.readline()
-            ls = line.split()
-            if len(ls)!=4: break
-            lst.append(ls)
-        os.chdir("..")
-    os.chdir(globs.PROGDIR)
 
-def readRows(phase):
-    dct = getattr(globs,'RowCountDict'+phase)
-    os.chdir(globs.ARCHIVEFOLDER)
-    os.chdir(phase)
-    for comp_i in range(len(globs.COMPONENTS)):
-        comp = globs.COMPONENTS[comp_i]
-        os.chdir(comp)
-        dct[comp] = []
-        lst = dct[comp]
-        fileName = "count(%s)list.txt"%comp
-        print("Opening File:",fileName)
-        f = open(fileName)
-        f.readline()
-        f.readline()
-        f.readline()
-        while True:
-            line = f.readline()
-            pair = line.split()
-            if len(pair)!=2: break
-            lst.append(pair)
-        os.chdir("..")
-    os.chdir(globs.PROGDIR)
-def updateTable(phase, type, schema):
-    print("Updating Table for schema %s"%schema)
-    if type == "ROW":
-        dct = getattr(globs,'RowCountDict'+phase)
-        lst = dct[schema]
-        globs.DISP_SCREEN.tview.setData(lst, "Table Name in schema %s; Row Count"%schema)
-        globs.DISP_SCREEN.currentWidget.hide()
-        globs.DISP_SCREEN.tview.show()
-        globs.DISP_SCREEN.currentWidget = globs.DISP_SCREEN.tview
-    elif type == "INVALIDOBJ":
-        dct = getattr(globs,'InvalidCountDict'+phase)
-        lst = dct[schema]
-        globs.DISP_SCREEN.tview.setData(lst, "Owner; Constraint_Name; Table_Name; Status")
-        globs.DISP_SCREEN.currentWidget.hide()
-        globs.DISP_SCREEN.tview.show()
-        globs.DISP_SCREEN.currentWidget = globs.DISP_SCREEN.tview
-def updater(task):
-    if task.labels:
-        imgLbl = globs.DISP_SCREEN.progress.rightList[task.localid]
-        if task.status == 0:       
-            pixmap = QPixmap('images/amber.png')
-        elif task.status == 2 or task.status == 5:
-            pixmap = QPixmap('images/green.png')
-            globs.CONTROLLER.pbar.updateCompleted(task.localid + 1)
-        elif task.status == 4:
-            pixmap = QPixmap('images/red.png')
-        imgLbl.setPixmap(pixmap)
-
-    if task.status == 4:
-        globs.CONTROLLER.resbtn.setDisabled(False)
-        globs.CONTROLLER.fixbtn.setDisabled(False)
-        globs.CONTROLLER.taskMonitor.errorBox.append("Errors Encountered While Performing Task #%d"%(task.localid+1))
-        globs.CONTROLLER.taskMonitor.errorBox.append("")
-
-    if task.op == 100:
-        if task.status == 2:
-            readRows(task.phase)
-            rowcmenu = getattr(globs,'RowCMenu'+task.phase)
-            print("Creating and Adding New View Row Actions for Phase %s"%task.phase)
-            actions = [QAction(comp, globs.MAIN_WINDOW) for comp in globs.COMPONENTS]            
-            for act_i in range(len(actions)):
-                rowcmenu.addAction(actions[act_i])
-                actions[act_i].triggered.connect(lambda f, i = act_i: updateTable(task.phase, "ROW", globs.COMPONENTS[i]))
-    elif task.op == 101:
-        if task.status == 2:
-            readInvalidObjects(task.phase)
-            menu = getattr(globs,"InvalidCMenu"+task.phase)
-            print("Creating and Adding New View Invalid Object Count Actions for Phase %s"%task.phase)
-            actions = [QAction(comp, globs.MAIN_WINDOW) for comp in globs.COMPONENTS]            
-            for act_i in range(len(actions)):
-                menu.addAction(actions[act_i])
-                actions[act_i].triggered.connect(lambda f, i = act_i: updateTable(task.phase, "INVALIDOBJ", globs.COMPONENTS[i]))
-            # globs.DISP_SCREEN.currentWidget.hide()
-            # globs.DISP_SCREEN.tview.show()
-            # globs.DISP_SCREEN.currentWidget = globs.DISP_SCREEN.tview
-            # dct = globs.InvalidCountDict
-            # lst = dct[globs.COMPONENTS[4]]
-            # globs.DISP_SCREEN.tview.setData(lst, "Owner; Constraint_Name; Table_Name; Status")
-            # rowcmenu = globs.RowCMenu
-            # print("Creating and Adding New View Row Actions")
-            # actions = [QAction(comp, globs.MAIN_WINDOW) for comp in globs.COMPONENTS]            
-            # funcs = []
-            # for act_i in range(len(actions)):
-            #     rowcmenu.addAction(actions[act_i])
-            #     actions[act_i].triggered.connect(lambda f, i = act_i: updateTable(globs.COMPONENTS[i]))
-    globs.LAST_TASK = task
+           
+    
 # class Task():
 #     lblcntr = 0
 #     def __init__(self, op, schema = None, labels = False, TaskType = "Accessory Task", Action = "None", phase = "None"):
@@ -484,61 +383,6 @@ def init():
     
     errorEvent = threading.Event()
     globs.ERREVENT = errorEvent
-
-
-def prepareTasks():
-    q = globs.TQueue
-    parseTaskList(globs.TQueue)
-    for comp_i in range(len(globs.COMPONENTS)):
-        comp = globs.COMPONENTS[comp_i]
-        q.append(Task(1,comp, True, 'Stat Gathering', "Gathering Stats on %s"%comp, "Premigration"))
-    for comp_i in range(len(globs.COMPONENTS)):
-        comp = globs.COMPONENTS[comp_i]
-        q.append(Task(2,comp, True, "Count Rows", "Counting Rows for %s"%comp, "Premigration"))
-    q.append(Task(100, phase ="Premigration"))
-    for comp_i in range(len(globs.COMPONENTS)):
-        comp = globs.COMPONENTS[comp_i]
-        q.append(Task(3,comp, True, "Invalid Object Counting", "Counting Invalid Objects for %s"%comp, "Premigration"))
-    q.append(Task(101, phase = "Premigration"))
-
-    
-    q.append(Task(107, 'None', True, "Custom Script", "Running Custom Pre-Migration Script", "Premigration"))
-    q.append(Task(103, 'JDA_SYSTEM', True, "Manugistics Installation", "Manugistics Installation in JDA_SYSTEM", "Premigration"))
-    if globs.ABPP_CREATED:
-        q.append(Task(104, 'ABPPMGR', True, "Schema Creation", "Creating ABPPMGR Schema", "Premigration"))
-    else:
-        q.append(Task(105, 'ABPPMGR', True, "Grant Providing", "Providing Grants to ABPPMGR Schema", "Premigration"))
-        q.append(Task(106, 'ABPPMGR', True, "Schema Update", "ABPPMGR Schema Update", "Premigration"))
-        
-    comp = globs.props['WebWORKS_Username']
-    q.append(Task(4,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "Premigration"))
-    q.append(Task(5,comp, True, 'Migration', "Migrating %s"%comp, "Migration"))
-    comp = globs.props['Monitor_Username']
-    q.append(Task(6,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "Premigration"))
-    q.append(Task(7,comp, True, 'Migration', "Migrating %s"%comp, "Migration"))
-
-    comp = globs.props['SCPO_Username']
-    q.append(Task(8,comp, True, 'Pre Migration', "Pre-Migrating %s"%comp, "Premigration"))
-    q.append(Task(9,comp, True, 'Migration', "Migrating %s"%comp, "Migration"))
-
-    for comp_i in range(len(globs.COMPONENTS)):
-        comp = globs.COMPONENTS[comp_i]
-        q.append(Task(1,comp, True, 'Stat Gathering', "Gathering Stats on %s"%comp, "Postmigration"))
-    for comp_i in range(len(globs.COMPONENTS)):
-        comp = globs.COMPONENTS[comp_i]
-        q.append(Task(2,comp, True, "Count Rows", "Counting Rows for %s"%comp, "Postmigration"))
-    q.append(Task(100, phase = "Postmigration"))
-    for comp_i in range(len(globs.COMPONENTS)):
-        comp = globs.COMPONENTS[comp_i]
-        q.append(Task(3,comp, True, "Invalid Object Counting", "Counting Invalid Objects for %s"%comp, "Postmigration"))
-    q.append(Task(101, phase = "Postmigration"))
-
-    q.append(Task(10,"ALLSCHEMAS", True, 'Validation', "Row Count Matching", "Postmigration"))
-    q.append(Task(11,"ALLSCHEMAS", True, 'Validation', "Invalid Object Count Matching", "Postmigration"))
-
-
-    for i in range(5):
-        q.append(Task(200+i,":P", True, 'Migration: '+ str(i), "HAHAHA"))    
 
 
 def migrate():
@@ -735,6 +579,11 @@ class Window(QMainWindow):
         exitAction= QAction("&Exit", self)
         exitAction.setStatusTip('Exit the Program')
         exitAction.triggered.connect(self.close)
+
+        selAllErrAction= QAction("&Select All Errors", self)
+        selAllErrAction.setStatusTip('Select All Errors')
+        selAllErrAction.triggered.connect(selallerrors)
+
         fileMenu.addAction(loadPropAction)
         fileMenu.addAction(exitAction)
         rowCounts = PremigrationMenu.addMenu('&Row Counts')
@@ -748,6 +597,8 @@ class Window(QMainWindow):
         viewProgressAction= QAction("&Progress", self)
         viewProgressAction.triggered.connect(self.viewProgress)
         viewMenu.addAction(viewProgressAction)
+
+        optionsMenu.addAction(selAllErrAction)
         
         contentScreen = QWidget(self)
         self.setCentralWidget(contentScreen)
