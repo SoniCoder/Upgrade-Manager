@@ -5,3 +5,4 @@ dist
 *.pyc
 *.spec
 ARCHIVE*
+tmp
