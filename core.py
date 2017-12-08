@@ -6,18 +6,20 @@ Description: Contains Major Portions of Code for functioning of Interface
 
 """
 
-import cx_Oracle
+import cx_Oracle #This library is used by python to interact with oracle
 import datetime
 import os
-import threading
+import threading #This library is used to create multiple threads
 import sys
 
-import globs
+import globs #This module is being used to share code across all modules
 
+#The following import are required for GUI interface
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtChart import *
+
 from collections import deque
 from shutil import copyfile, copy
 from subprocess import Popen, PIPE
@@ -27,16 +29,20 @@ from errorhandling import *
 from GUI_Design import *
 from signals import *
 from task import Task, updater, prepareTasks 
-from config import *
 from commands import *
 
 
 def connect():
+    """
+    Checks Connections to all Users
+    """
+
     dbpath = globs.props['TargetServer'] + ":" + globs.props['Port'] + "/" + globs.props['Service']
     
     print("Checking Connection with SYSTEM USER")
     username, password = globs.SYSTEM_USER_KEYS
     try:
+        # Try connection with SYSTEM User
         con = cx_Oracle.connect(globs.props[username], globs.props[password], dbpath)
         print("Connection Successful")
         con.close()
@@ -46,15 +52,18 @@ def connect():
     con = cx_Oracle.connect(globs.props[username], globs.props[password], dbpath)    
     print("Checking JDA_SYSTEM existence")
     cur = con.cursor()
+    # Check whether JDA_SYSTEM exists
     cur.execute("select * from ALL_USERS where username = 'JDA_SYSTEM'")
     cur.fetchall()
     if(cur.rowcount==1):
         print("User Exists")
     else:
+        # IF JDA_SYSTEM doesn't exist, create it
         print("Creating USER JDA_SYSTEM")
         createJDASYSTEM()
     cur.close()
 
+    # Check for ABPP User and create it if it doesn't exist
     print("Checking ABPP User existence")
     cur = con.cursor()
     cur.execute("select * from ALL_USERS where username = 'ABPPMGR'")
@@ -70,7 +79,7 @@ def connect():
     con.close()
 
 
-
+    # Check connection with all users
     for username, password in globs.SCHEMA_CREDS_KEYS:
         print("Attempting Connection with Username %s and Password %s"%(globs.props[username], globs.props[password]))
         try:
@@ -85,10 +94,16 @@ def connect():
     return (True, None, None)
 
 def createABPPMGRGRANTS():
+    """
+    Function to provide appropriate grants to ABPP user
+    """
     sqlcommand = bytes('@sqls/ABPP_GRANTS', 'utf-8')
     runSQLQuery(sqlcommand, globs.props['System_Username'], globs.LogPipe)
 
 def createABPPMGRUPDATE():
+    """
+    Function to run updateAbppSchema batch script
+    """
     progPath = os.getcwd()
     scriptFolder = globs.props['JDA_HOME']+'\\config\\database\\platform\\'
     os.chdir(scriptFolder)
@@ -97,12 +112,18 @@ def createABPPMGRUPDATE():
     os.chdir(progPath)
 
 def createABPPMGRUSER():
+    """
+    Function to create ABPP User
+    """
     password = globs.props['ABPP_Password']  
     sqlcommand = bytes('@'+globs.props['JDA_HOME']+'\\config\\database\\setup\\cr_abpp_user '+password, 'utf-8')
     stdout, stdin = runSQLQuery(sqlcommand, globs.props['System_Username'])
     print(stdout.decode('ascii'))
 
 def createABPPMGRSCHEMA():
+    """
+    Function to run createAbppSchema batch script
+    """
     progPath = os.getcwd()
     scriptFolder = globs.props['JDA_HOME']+'\\config\\database\\platform\\'
     os.chdir(scriptFolder)
@@ -125,6 +146,9 @@ def createManugistics():
     stdout, stdin = runSQLQuery(sqlcommand, user, globs.LogPipe)
     
 def createLogFolders():
+    """
+    This function creates a folder for archiving all logs
+    """
     os.chdir("ARCHIVES")
     logFolder = datetime.datetime.now().strftime("ARCHIVE_%d_%b_%Y_%H_%M_%S_0")
     while logFolder in os.listdir():
@@ -144,6 +168,9 @@ def createLogFolders():
     os.chdir(globs.PROGDIR)
 
 class EmittingStream(QObject):
+    """
+    Signal class to redirect all output to custom console
+    """
     textWritten = pyqtSignal(str)
     
     def __init__(self):
@@ -165,7 +192,9 @@ class EmittingStream(QObject):
         pass
 
 class LogPipe(threading.Thread):
-
+    """
+    Thread Class to listen for output to its instance and pass it to custom console
+    """
     def __init__(self):
         threading.Thread.__init__(self)
         self.daemon = True
@@ -322,9 +351,15 @@ class LogPipe(threading.Thread):
 #         elif self.op == 202:
 #             self.status = 4
 class UpdateSignal(QObject):
+    """
+    Signal to be used after task completion and calling updater function
+    """
     updateTask = pyqtSignal(Task)
 
 class prThread(threading.Thread):
+    """
+    Class for Thread #2 which is responsible to execute all tasks
+    """
     def __init__(self):
         threading.Thread.__init__(self)
         self.daemon = True
@@ -332,22 +367,27 @@ class prThread(threading.Thread):
         q = globs.TQueue
         sig = globs.UpdateSignal.updateTask
         while q:
+            # Pop tasks from the queue until queue is empty
             task = q.popleft()
             sleep(0.5)
             print("Running Task",task.TaskType,task.schema)
             sleep(0.5)
             sig.emit(task)
             sleep(1)
+            # Run Task
             task.runtask()
+            # If Task finished without errors mark it as finished successfully
             if task.status == 1:
                 task.status = 2
             sig.emit(task)
 
+            # If Tasks completed with errors wait for incoming signal upon fixing
             if task.status == 4:
                 globs.ERREVENT.clear()
                 globs.ERREVENT.wait()
                 task.status = 2
                 sig.emit(task)
+                # The following code can be used to rerun the task in case of failure
                 # if task.status == 5:
                 #     sig.emit(task)
                 # else:
@@ -358,7 +398,15 @@ class prThread(threading.Thread):
         sleep(0.5)
 
 def init():
-    globs.PROGDIR = os.getcwd()
+    """
+    Initialization function for several globals
+    """
+
+    globs.PROGDIR = os.getcwd() #Save the program directory
+    
+
+    # Prepare to Read from Property File
+
     globs.SYSTEM_USER_KEYS = ('System_Username', 'System_Password')
     globs.SCHEMA_CREDS_KEYS = [('WebWORKS_Username', 'WebWORKS_Password'), ('ABPP_Username', 'ABPP_Password'), ('Monitor_Username', 'Monitor_Password'), ('JDA_SYSTEM_Username', 'JDA_SYSTEM_Password'), ('SCPO_Username', 'SCPO_Password')]
     globs.CRED_DICT = {
@@ -369,11 +417,15 @@ def init():
         'JDA_SYSTEM_Username':'JDA_SYSTEM_Password',
         'SCPO_Username':'SCPO_Password'
     }
+
+    # The following Queue(deque) will contain all Tasks 
     globs.TQueue = deque()
 
+    # Create an instance of TaskUpdate Signal and connect it
     globs.UpdateSignal = UpdateSignal()
     globs.UpdateSignal.updateTask.connect(updater)
 
+    # Error Signal
     globs.SignalObj = CSignal()
     globs.SignalObj.updateErrorSignal.connect(dispErr)
 
@@ -386,19 +438,30 @@ def init():
 
 
 def migrate():
+    """
+    Starts Migration Procedure
+    """
     print("Creating and Starting Task Processor Thread") 
     controller = globs.CONTROLLER
+
     controller.btn.setDisabled(True)
     controller.vtable.hide()
     controller.taskMonitor.show()
+    # Start Task Handler Thread
     th = prThread()
     th.start()
 
 def disableTaskControls():
+    """
+    Error Fixing Done and Migration in Process
+    """
     globs.CONTROLLER.resbtn.setDisabled(True)
     globs.CONTROLLER.fixbtn.setDisabled(True)
 
 def resume():
+    """
+    Resumes migration after all errors have been fixed
+    """
     if checkIfAllFixed():
         disableTaskControls()
         globs.ERREVENT.set()
@@ -415,6 +478,9 @@ def fixerr():
     # globs.ERREVENT.set()
 
 def queryComponents():
+    """
+    Get Current Version, Target Version and Available Schemas
+    """
     dbpath = globs.props['TargetServer'] + ":" + globs.props['Port'] + "/" + globs.props['Service']
     con = cx_Oracle.connect(globs.props['WebWORKS_Username'], globs.props['WebWORKS_Password'], dbpath)
     cur = con.cursor()
@@ -439,9 +505,10 @@ def queryComponents():
 
     augComps.append(globs.props['SCPO_Username'].upper())
 
-
+    # This Variable Contains List of Intended Users
     globs.COMPONENTS = augComps
 
+    # Create appropriate log folders for each User
     for comp in augComps:
         for dirs in ["Premigration", "Migration", "Postmigration"]:
             os.chdir(globs.ARCHIVEFOLDER)
@@ -469,6 +536,9 @@ def queryComponents():
     f.close()
 
 def readProperties():
+    """
+    Reads the property file and stores key-value pairs in a dictionary
+    """
     separator = ":"
     props = {}
     
@@ -495,6 +565,10 @@ def readProperties():
 
 
 class ControllerScreen(QWidget):
+    """
+    This Screen Contains the Version Table as well as any buttons.
+    This Screen will be displayed inside Action Screen on top-left corner after successful connection.
+    """
     def __init__(self, parent = None):     
         QWidget.__init__(self, parent)
         self.arch = QVBoxLayout(self)
@@ -545,6 +619,9 @@ class ControllerScreen(QWidget):
         self.arch.addWidget(self.buttonBar)
         
 class Window(QMainWindow):
+    """
+    Main Windows Screen Class which creates everything else
+    """
     def __init__(self):     
         QMainWindow.__init__(self)
         init()

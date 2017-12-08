@@ -1,3 +1,9 @@
+"""
+Author: Hritik Soni
+
+Description: Module for extending existing widgets in PyQt5 Library
+"""
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *

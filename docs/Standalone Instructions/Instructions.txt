@@ -1,0 +1,27 @@
+Pre-requisites:
+
+1. The tool assumes you have SQLPlus installed somewhere in your path.
+
+
+How to Run:
+
+1. Install all VC++ Redistributables provided in root folder.
+2. Inside "Upgrade Manager" folder, run "run program.bat".
+
+Usage:
+
+1. Make sure upgrade.properties (located in program folder) has right information of the DB server. A sample fill of details has also been provided.
+2. Upon opening the application, properties file will be read and details will be shown on connection screen.
+3. Once you click on connect, it will attempt to connect to all the relevant schemas and create schemas if absent (JDA_SYSTEM / ABPPMGR).
+4. An "archives" folder is present inside program directory which has entries created everytime the program is run. You can locate all logs produced during program execution inside that folder.
+5. After successful connection, all tasks will be prepared and can be seen on the right.
+6. Every task initially has "White" Status, which becomes "Amber" upon in-progress, "Green" under successful completion and "Red" if any errors were encountered.
+7. Clicking on "Start Migration Procedure" will initate the procedure.
+
+Error Resolution:
+
+1. Everytime a task completes, any logs generated are read and checked for errors.
+2. Upon finding an error Status becomes red and procedure is paused.
+3. "Fix Error" button becomes active where all errors can be seen. Errors can also be found on error console in top-left.
+4. Every error described tell where to find the error (what line in what file). Somebody needs to manually resolve the errors one by one.
+5. Upon marking all errors as fixed, "Resume Migration" button can be used to continue migration from next step.

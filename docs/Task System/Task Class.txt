@@ -1,0 +1,27 @@
+Constructor of Task class
+
+Description of Params:
+
+1. op : This is operation code. This has to be unique for each Task object if it performs a unique functionality.
+If a task is to be reperformed, this code can be reused to create a new task object with similar functionality.
+
+2. schema: This describes which schema a particular task acts on. This also helps to place logs at appropriate folder.
+
+3. labels: This is a boolean variable which tells the program whether the task needs to be shown in UI.
+
+4. TaskType: A very brief idea of the Task.
+
+5. Action: A more exact idea of the Task.
+
+6. phase: Can be one of the three - Premigration, Migration and Postmigration.
+
+Other Instance/Class Variables:
+
+7. Status: Status of a Task
+
+It can be one of these.
+
+(i)     0 : Newly Created Task
+(ii)    1 : A Running Task
+(iii)   2 : Successfully Completed Task
+(iv)    4 : Task completed with Errors

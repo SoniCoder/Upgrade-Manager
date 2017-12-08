@@ -1,9 +1,22 @@
+"""
+Author: Hritik Soni
+
+Description: This Module is meant to store all kinds of major extensions to PyQt Widgets.
+These classes also include design/layouts.
+"""
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from augmentedWidgets import *
 
 class ActionScreen(QWidget):
+    """
+    This Screen Will Contain Controls during execution of tasks.
+
+    This Screen is visible on top left after successful connection.
+
+    """
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
         self.layout = QVBoxLayout(self)
@@ -12,6 +25,9 @@ class ActionScreen(QWidget):
         return QSize(400,300)
 
 class ErrorTE(QTextEdit):
+    """
+    This is the Widget for the error console
+    """
     def __init__(self, parent = None):
         QTextEdit.__init__(self, parent)
         pal = QPalette()
@@ -32,6 +48,10 @@ class ErrorTE(QTextEdit):
 
 
 class ComponentTable(QTableWidget):
+    """
+    This Table is shown after successful connection which shows a list of schemas
+    and also the current version along with the target versions.
+    """
     def __init__(self, parent = None):
         QTableWidget.__init__(self, parent)
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -42,6 +62,9 @@ class ComponentTable(QTableWidget):
         self.setColumnWidth(2, event.size().width()/self.cols)
 
 class ConsoleTE(QTextEdit):
+    """
+    This is the Widget for our custom console
+    """
     def __init__(self, parent=None):
         QTextEdit.__init__(self, parent)
         pal = QPalette()
@@ -58,6 +81,9 @@ class ConsoleTE(QTextEdit):
         self.setFont(font)
 
 class ConnectionScreen(QWidget):
+    """
+    This Screen contains information read from upgrade.properties file and also the connect button
+    """
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
         self.layout = QVBoxLayout(self)
@@ -97,6 +123,9 @@ class ConnectionScreen(QWidget):
         return QSize(400,300)
 
 class DisplayScreen(QWidget):
+    """
+    This Screen Will Contain the Progress Display and also any Displayable outputs like Row Counts in form of a table
+    """
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
         # font_db = QFontDatabase()
@@ -155,6 +184,9 @@ class DisplayScreen(QWidget):
         self.currentWidget = scr
 
 class ErrorTableScreen(QTableWidget):
+    """
+    This Table will display any encountered errors along with checkboxes for marking them fixed
+    """
     def __init__(self,parent=None):
         QTableWidget.__init__(self, parent)
         # self.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -180,6 +212,9 @@ class JDALogoLabel(QLabel):
         self.setSizePolicy( QSizePolicy.Ignored, QSizePolicy.Ignored )
 
 class TableViewScreen(QTableWidget):
+    """
+    This Table will display both the RowCount data and InvalidObjectCount data
+    """
     def __init__(self,parent=None):
         QTableWidget.__init__(self)
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -209,6 +244,9 @@ class TableViewScreen(QTableWidget):
             self.setColumnWidth(c_i, event.size().width()/self.cols)
 
 class FULLProgressBar(QProgressBar):
+    """
+    The Class for the one and only progress bar which involves all migration steps
+    """
     def __init__(self, parent = None):
         QProgressBar.__init__(self, parent)
         self.thisLayout = QHBoxLayout(self)
@@ -232,6 +270,9 @@ class FULLProgressBar(QProgressBar):
         self.maxTasks = n
         self.updateStatus()
 class ProgressScreen(QWidget):
+    """
+    This Widget will be put inside the DisplayScreen and it is specifically meant to show the progress of all the tasks
+    """
     def __init__(self,parent=None):
         QWidget.__init__(self)
         self.layout = HBOXNOMG(self)

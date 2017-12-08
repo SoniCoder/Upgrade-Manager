@@ -1,8 +1,20 @@
+"""
+Author Hritik Soni
+
+Description: Accessory Module for some helper functions
+
+"""
+
+
 import globs
 import os
 from errorhandling import find_errors
+from shutil import copy
 
 def findErrorsInFiles(FILELIST, taskobj):
+    """
+    Single function for handling errors in a list of files
+    """
     anyFound = False
     for f in FILELIST:
         log_file = "\\".join([globs.ARCHIVEFOLDER, taskobj.phase, taskobj.schema, f])
@@ -11,6 +23,9 @@ def findErrorsInFiles(FILELIST, taskobj):
     return anyFound
 
 def readInvalidObjects(phase):
+    """
+    Read InvalidObjects Counts from Spooled File
+    """
     dct = getattr(globs,'InvalidCountDict'+phase)
     os.chdir(globs.ARCHIVEFOLDER)
     os.chdir(phase)
@@ -36,6 +51,9 @@ def readInvalidObjects(phase):
     os.chdir(globs.PROGDIR)
 
 def readRows(phase):
+    """
+    Read Row Counts from Spooled File
+    """
     dct = getattr(globs,'RowCountDict'+phase)
     os.chdir(globs.ARCHIVEFOLDER)
     os.chdir(phase)
@@ -57,7 +75,18 @@ def readRows(phase):
             lst.append(pair)
         os.chdir("..")
     os.chdir(globs.PROGDIR)
+
+def safecopy(src, dst):
+    try:
+        copy(src, dst)
+    except:
+        print("File Not Found: %s"%src)
+    return
+
 def updateTable(phase, type, schema):
+    """
+    Update Table from Dictionary
+    """
     print("Updating Table for schema %s"%schema)
     if type == "ROW":
         dct = getattr(globs,'RowCountDict'+phase)

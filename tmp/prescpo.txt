@@ -1,0 +1,3 @@
+create_scporefschema.log
+create_wwfrefschema.log
+grant_manu_privs.log

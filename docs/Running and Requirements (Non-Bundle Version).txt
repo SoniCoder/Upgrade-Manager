@@ -1,0 +1,13 @@
+The Bundled Version should contain all these requirements and you should be able to run right away.
+
+Requirements:
+
+1. Python 32-bit (3.5 or higher)
+2. Oracle Instant Client Libraries 32-bit.
+3. PyQt5 Libraries for Python
+4. SQLPlus
+5. cx_Oracle library for Python
+
+How to Run:
+
+Pass manage.py to python without any arguments to run the program.

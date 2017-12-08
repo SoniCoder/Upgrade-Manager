@@ -1,4 +1,4 @@
-set pages 999;
+set pages 45999;
 set linesize 200
 col count format 999,999,999;
 spool count(&1)list.txt

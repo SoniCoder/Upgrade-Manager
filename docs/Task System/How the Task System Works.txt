@@ -1,0 +1,47 @@
+The Idea of Running Tasks in order is to first prepare a list of Tasks to be performed.
+Then the tasks in the queue are run by a seperate thread(Thread #2) so that the main thread still works and any UI components are still functional.
+
+The Program/Tool has 3 seperate threads:
+
+1. Main Thread - Used for mostly GUI based purposes and starting/managing other threads.
+2. Thread #2 - This thread is reponsible for executed the Task Queue prepared by the Main Thread.
+3. A third thread for listening to all print statements and redirect them to a custom console (Not relevant to the task system)
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+Actual Implementation:
+
+The Thread #2 is created in core.py under the class name prThread.
+
+The following order explains the functioning of the task system briefly.
+
+Prepare Tasks in Main Thread -> Execute the Tasks in the Queue -> Call an Updater function (in the Main Thread) after every Task finished running in Thread #2
+
+All these three functionalities exist in task.py module
+
+Let us look at this pipeline in some more detail:
+
+1. Prepare Tasks in Main Thread: Task Objects are created for each type of task inside a function called prepareTaks() which exists in task.py.
+
+These task objects are put inside a special queue (Python deque). This queue has ability to pop/push from both left and right sides.
+Each Task object is created by calling the constructor of the Task class and passing it certain describing parameters of the task.
+The description of these parameters can be found inside Task Class.txt.
+
+2. Execute the Tasks in the Queue:
+
+This Step is performed by Thread #2. Simply putting the Thread extracts Task Objects one by one from the Queue and calls its run function.
+The run function of each task object describes exactly what needs to be done for that task.
+
+3. Call an Updater function (in the Main Thread) after every Task finished running in Thread #2:
+
+This Step is needed because most variables are not Thread safe meaning two seperate threads can't necessarily simulatenously shared variables.
+An example of this behaviour would be lets say a text box created in the Main Thread. The Main Thread is always going to be accessing this text box
+because it needs to show it to the user but if at the same time another thread is accessing/modifying it, weird behaviour or crash can occur.
+
+This step won't be necessary for most tasks as it is meant to update something inside the UI if needs to be done after a particular task finishes.
+
+An example of this would be the activation of Row Count View interface in the UI after all Row Counting is done.
+
+The Update of Status Lights (Amber/Green/Red) will be handled automatically.
+
+
