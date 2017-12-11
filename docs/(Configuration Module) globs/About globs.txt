@@ -1,0 +1,11 @@
+globs.py is a file shared across all modules in the program.
+
+This module acts as a configuration module where you can make changes at a single places available to be used throughout the program.
+The module also acts as a place for sharing data among different modules of the program.
+
+An example configuration would be the mail options. Refer to the mailing doc for more info on these.
+
+Almost all the code uses this module to create global variables.
+
+These variables need not to be written in globs.py as they can be created during runtime. 
+For example, globs.a = "hi". Now globs.a is available throughout all modules that import globs.

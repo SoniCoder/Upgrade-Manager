@@ -1,0 +1,9 @@
+Whenever an error is encountered, it is shown in the Error Console as well as the Error Table.
+
+Further, the error details contains the exact line number and file path where you can find the actual error.
+
+Once you have solved the error manually, check the corresponding checkbox to mark this error fixed.
+
+Repeat this for all the errors and once you are done, click on "Resume Migration Safely" which should allow you to proceed with Migration.
+
+ 

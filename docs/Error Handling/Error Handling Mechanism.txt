@@ -1,0 +1,17 @@
+Make sure you have gone through the Task System docs for properly understand this doc.
+
+Every Step of the Procedure may produce certain logs which needs to be check for any king of errors. The error handling module of this tool
+is responsible for doing such activities. After while performing a task inside the run function, at the end needs to be enter a function which
+specifies while files need to be checked for errors.
+
+The error handling module abstracts everything to two helper functions:
+
+1. find_errors(filepath, patterns)
+
+This function checks a single file for errors of the type specified in the patterns list. It will also report them in the error console and the error box.
+This function also passes the error to the current error block which is reponsible for sending mails.
+
+2. findErrorsInFiles(BACKUPFILES, taskobj)
+
+This function uses the above function to quickly check errors in a bunch of files located in the standard log folders specified in a list.
+

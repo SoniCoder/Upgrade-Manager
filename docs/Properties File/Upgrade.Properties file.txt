@@ -1,0 +1,24 @@
+This File Should be placed inside the Program Folder.
+
+It should must contain atleast the keys given in the template.
+
+Here is a sample:
+
+TargetServer:127.0.0.1
+Port:1521
+SID:O12CR102
+Service:O12CR102
+System_Username:SYSTEM
+System_Password:MANAGER
+WebWORKS_Username:WWFMGR
+WebWORKS_Password:WWFMGR
+ABPP_Username:ABPPMGR
+ABPP_Password:ABPPMGR
+SCPO_Username:SCPOMGR
+SCPO_Password:SCPOMGR
+Monitor_Username:EMAMGR
+Monitor_Password:EMAMGR
+JDA_SYSTEM_Username:JDA_SYSTEM
+JDA_SYSTEM_Password:JDA_SYSTEM
+JDA_HOME:C-\JDA\JDAv2016
+

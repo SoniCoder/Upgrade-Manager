@@ -391,8 +391,8 @@ def prepareTasks():
     q.append(Task(11,"ALLSCHEMAS", True, 'Validation', "Invalid Object Count Matching", "Postmigration"))
 
 
-    for i in range(5):
-        q.append(Task(200+i,"Dummy Task", True, 'Migration: '+ str(i), "Dummy Task"))   
+    # for i in range(5):
+    #     q.append(Task(200+i,"Dummy Task", True, 'Migration: '+ str(i), "Dummy Task"))   
 
 def updater(task):
     """

@@ -1,0 +1,35 @@
+To create a new task, 3 things needs to be done
+
+-> Open task.py module, it is where you will be making all changes necessary to create a new task.
+-> Go to the prepareTasks function and decide when exactly you wish to perform the task as tasks will be executed in the order they are created.
+-> To add a single task, you need to write a single line q.append(Tasks(...))
+-> Basically q is the queue where tasks are put and in that you are placing a Task object by calling its constructor.
+-> To see the details of the parameters of the task constructor go to Task Class.txt doc file.
+-> For now just make up a unique operation code different from all others and add a line similar to the other tasks to create your own task.
+-> Now you have to tell the program exactly what to do when the task is run.
+-> Now go to the Task class and locate the run function.
+-> Add another elif statement like other tasks and enter the operation code (op) you previously used while creating the task.
+-> Inside this elif, you can enter whatever you wish to do while the task is run.
+-> You can pretty much do anything you want but there are certain common things you might wanna do like as follows:
+
+Run an SQL Query: 
+
+For this you can simply use a single accessory function called runSQLQuery. The Description of this function is given in the code.
+
+Run a batch/command file:
+
+Use the Popen inbuilt function. You can look at the existing tasks for help.
+
+Backup Certain Files:
+
+Important logs might be generated which you might wanna save for later. Use safecopy accessory function for this function.
+
+Check a list of files for errors:
+
+Use the accessory function findErrorInFiles(...) to handle errors in all specified files and also automatically prepare them 
+for mail, reporting, etc.
+
+-> Now the steps are complete, whenever this task is executed, all the steps you mentioned in the run function will be executed.
+
+-> The last thing you might wanna do is to update certain something related to the task in the UI which uses the main thread. For this
+you can do whatever you wish in the updater function.

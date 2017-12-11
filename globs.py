@@ -21,13 +21,14 @@ InvalidCountDictPostmigration = {}
 MAIL_ON = True
 ATTACHMENTS = []
 SUBJECT = "Sample Subject"
-FROM = "hothritik1@gmail.com"
+FROM = "Hritik.Soni@jda.com"
 TO = "f2014480@pilani.bits-pilani.ac.in"
 TEXT = "Sample Content"
-SERVER = "smtp.gmail.com"
-PORT = "587"
+SERVER = "mailout.jdadelivers.com"
+PORT = "25"
 PASSWORD = ""
 COMPRESS = True
+USE_TLS = False
 
 class saveDir():
     def __init__(self):

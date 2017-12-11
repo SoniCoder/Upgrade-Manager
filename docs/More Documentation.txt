@@ -1,2 +1,3 @@
 A majority of the Code is documented so more documentation can be found as you read the code.
-The task.py module has been especially documented
+
+The task.py module has been especially documented.

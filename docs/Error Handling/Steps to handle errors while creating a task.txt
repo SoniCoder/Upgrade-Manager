@@ -1,0 +1,12 @@
+While creating a task you need to do certain steps to make sure any errors inside log files are handled correctly.
+
+Basically you need to specify exactly which files you need to check for errors. 
+This needs to be done in the runtask function inside the relevant opcode elif (Read Task System for further details).
+
+1. Decide what all log files the task creates and which you wish to check for errors.
+
+2. Copy those files using safecopy function to the appropriate log folder (See pre-written tasks for help).
+
+3. Now call findErrorsInFiles and pass the list of names of log files.
+
+4. Finally if this function returns True set current Task's status to 4.

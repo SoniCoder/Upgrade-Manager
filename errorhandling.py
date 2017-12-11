@@ -20,7 +20,6 @@ class ErrorBlock:
     def addError(self, s):
         self.errList.append(s)
     def finalize(self):
-        globs.PASSWORD = "Dbz123!!!!"
         globs.TEXT = "\n".join(self.errList)
         if self.errList and globs.MAIL_ON:
             send()
@@ -98,5 +97,4 @@ def selallerrors():
     rows = tb.rowc
     for i in range(rows):
         chk = tb.cellWidget(i, 0).chkbox.setChecked(True)
-        
     return

@@ -1,0 +1,7 @@
+Read (Steps to create a new task) and open the part where it says "run function".
+
+Basically you will need to go to the Task class, find the runtask function and the appropriate task using the op code.
+
+The opcode can be found using the prepareTasks() method, this is where all tasks are created.
+
+Once you have the op code, you can do whatever you want under the runtask function.

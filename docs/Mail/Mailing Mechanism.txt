@@ -1,0 +1,35 @@
+After encountering any error it is immediately send via mail to the recipient specified in the configuration file (globs.py) unless MAIL_ON is set to False inside globs.py.
+
+All the configurations related to mail functionality can be found in globs.py module.
+
+The following is a sample template:
+
+MAIL_ON = True
+ATTACHMENTS = []
+SUBJECT = "Sample Subject"
+FROM = "Hritik.Soni@jda.com"
+TO = "f2014480@pilani.bits-pilani.ac.in"
+TEXT = "Sample Content"
+SERVER = "mailout.jdadelivers.com"
+PORT = "25"
+PASSWORD = ""
+COMPRESS = True
+USE_TLS = False
+
+MAIL_ON globally enables or disables the mail functionality.
+
+ATTACHMENTS, SUBJECT, TEXT will be handled dynamically.
+
+SERVER needs to be the SMTP server address hosting the mail functionality.
+
+For JDA Port is 25 but make sure you are using the right port(its 587 for gmail).
+
+Set COMPRESS as True if you want to compress files before they are sent otherwise set it to False.
+
+USE_TLS needs to be True for servers that require TLS authentication, for JDA it needs to be set to False.
+If USE_TLS is False, the password needs not to be specified but must be specified if TLS is enabled.
+
+---------------------------------------------------------------------------------------------
+
+The Error-Mail Functionality uses net.py module for sending mails and to store errors pertaining to a single task, the ErrorBlock class is used. 
+Whenever a new task is run, a new ErrorBlock object is created which will keep track of any incoming errors and throws a mail when task is finished and one or more errors were encountered.

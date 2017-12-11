@@ -1,0 +1,14 @@
+Whenever the program is run, a new folder is created inside the "archives" folder present in the program folder.
+
+This archive folder is guaranteed to be unique and is named using the date and time at which the program was run.
+
+Any useful logs created during the migration procedure are meant to be placed inside this folder in an organized manner.
+
+The archive folder contains sub-folders for each phase of the migration and each phase folder contains all the schemas involved during migration.
+
+From the code, the archive folder is accessible via globs.ARCHIVEFOLDER variable which can be used after importing globs module.
+
+
+FURTHER READING:
+
+(Configuration Module) globs

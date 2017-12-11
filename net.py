@@ -50,9 +50,10 @@ def send():
         msg.attach(fl)
 
     s = smtplib.SMTP(globs.SERVER, globs.PORT)
-    s.ehlo()
-    s.starttls()
-    s.ehlo()
-    s.login(globs.FROM, pswd)
+    if globs.USE_TLS:
+        s.ehlo()
+        s.starttls()
+        s.ehlo()
+        s.login(globs.FROM, pswd)
     s.sendmail(globs.FROM, globs.TO, msg.as_string())
     s.quit()
